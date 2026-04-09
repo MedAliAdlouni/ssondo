@@ -1,0 +1,68 @@
+[project]
+name = "training-ssondo"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+  "h5py>=3.10.0",
+  "numpy>=1.26.3",
+  "pandas>=2.2.0",
+  "einops==0.7.0",
+  "pyyaml==6.0.1",
+  "npy-append-array==0.9.16",
+  "tensorboardx==2.6.2.2",
+  "timm",
+  "soundfile==0.12.1",
+  "torch==2.4.1",
+  "torchaudio==2.4.1",
+  "torchvision==0.19.1",
+  # Python wrapper; note: some repo code also uses the *sox binary* via torchaudio/CLI
+  "sox==1.4.1",
+  # Use nightly yt-dlp for YouTube 403 fix (recommended by yt-dlp maintainers)
+  "yt-dlp>=2025.10.22",
+  "setuptools",
+  "tqdm>=4.67.1",
+  "nnAudio",
+  "matpac",
+  "librosa>=0.11.0",
+  "umap-learn>=0.5.11",
+  "psutil>=7.2.2",
+  "plotly>=6.5.2",
+  "tensorboard>=2.20.0",
+  "matplotlib>=3.10.8",
+  "pytorch-lightning>=2.6.1",
+  "ty>=0.0.15",
+  "ruff>=0.15.0",
+  "ipykernel>=7.2.0",
+  "nbformat>=4.2.0",
+  "pip-system-certs==5.3",
+]
+
+[tool.uv.sources.matpac]
+git = "https://github.com/aurianworld/matpac.git"
+subdirectory = "inference_matpac"
+rev = "main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = false
+packages = [
+    "training_ssondo",
+    "training_ssondo.extract_teachers_knowledge",
+    "training_ssondo.download_subset_of_audioset",
+    "training_ssondo.cluster_teachers_embeddings",
+    "training_ssondo.knowledge_distillation_training",
+    "training_ssondo.utils",
+    "training_ssondo.utils.student_models",
+    "training_ssondo.utils.student_models.ERes2Net",
+    "training_ssondo.utils.student_models.MobileNetV3",
+    "training_ssondo.utils.student_models.dymn",
+    "training_ssondo.utils.student_models.quantizable_models",
+    "training_ssondo.utils.student_models.quantizable_models.MobileNetV3",
+]
+
+[tool.setuptools.package-dir]
+"" = "."
+"training_ssondo" = "."

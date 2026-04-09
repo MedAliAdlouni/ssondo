@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+*.egg
+.Python
+*.pth
+*.pt
+*.ckpt
+*.pkl
+*.h5
+*.hdf5
+*.safetensors
+
+# Environments
+.venv
+.env
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# IDEs
+.vscode/
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+# ML/AI
+runs/
+logs/
+tensorboard/
+tb_logs/
+outputs/
+
+# Data folder
+data/
+
+# Data files
+*.csv
+*.json
+*.wav
+*.mp3
+*.flac
+*.mp4
+*.avi
+*.npy
+*.npz
+*.mat
+
+# Model files
+*.pt
