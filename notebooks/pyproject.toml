@@ -1,8 +1,7 @@
 [project]
-name = "ssondo"
+name = "ssondo-notebooks"
 version = "0.1.0"
-description = "Lightweight audio inference from SSONDO student models"
-readme = "README.md"
+description = "Notebooks for SSONDO evaluation"
 requires-python = "==3.12.*"
 dependencies = [
     "numpy>=1.26.3",
@@ -11,25 +10,20 @@ dependencies = [
     "torch==2.4.1",
     "torchaudio==2.4.1",
     "torchvision==0.19.1",
-]
-
-[dependency-groups]
-dev = [
-    "pytest>=8.0",
     "soundfile>=0.12.1",
+    "librosa>=0.11.0",
     "datasets>=3.0,<4.0",
     "scikit-learn>=1.4",
     "matplotlib>=3.8",
     "tqdm>=4.66",
     "umap-learn>=0.5",
     "ipykernel>=6.29",
-    "nbconvert>=7.17.1",
-    "librosa>=0.11.0",
+    "ssondo",
 ]
+
+[tool.uv.sources.ssondo]
+path = "../inference_ssondo"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = { find = { include = ["ssondo*"] } }
