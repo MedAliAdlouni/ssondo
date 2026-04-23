@@ -40,7 +40,7 @@ dependencies = [
 [tool.uv.sources.matpac]
 git = "https://github.com/aurianworld/matpac.git"
 subdirectory = "inference_matpac"
-rev = "main"
+rev = "afc1796acf04a46040981bd98bff23e3f91b54d1"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
