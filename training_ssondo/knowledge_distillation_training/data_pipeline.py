@@ -1,8 +1,6 @@
 """Data pipeline setup for knowledge distillation training."""
 
-
 import os
-import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -49,7 +47,7 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
         SliceAudio(
             sr=conf["student_model"]["sr"],
             window_length=conf["preprocess"]["slice_audio"]["win_len"],
-            step_size=conf["preprocess"]["slice_audio"]["step_size"]
+            step_size=conf["preprocess"]["slice_audio"]["step_size"],
         ),
         LogMelSpectrogram(
             sample_rate=conf["student_model"]["sr"],
@@ -57,12 +55,12 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
             hop_length=conf["preprocess"]["logmelspec"]["hop_len"],
             n_mels=conf["preprocess"]["logmelspec"]["n_mels"],
             f_min=conf["preprocess"]["logmelspec"]["f_min"],
-            f_max=conf["preprocess"]["logmelspec"]["f_max"]
+            f_max=conf["preprocess"]["logmelspec"]["f_max"],
         ),
         Normalize(
             mean=conf["preprocess"]["normalize"]["mean"],
-            std=conf["preprocess"]["normalize"]["std"]
-        )
+            std=conf["preprocess"]["normalize"]["std"],
+        ),
     )
     print("✓ Preprocessing pipeline configured")
 
@@ -70,18 +68,16 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
     # 2. Load Datasets
     # -------------------------------------------------------------------------
     print("\n[2/4] Loading AudioSet datasets...")
-    
+
     if conf["dataset"]["name"] != "audioset":
         raise ValueError(f"Dataset {conf['dataset']['name']} is not supported")
 
     # Set up AudioSet paths
     root_dir = os.path.join(DATA, "AudioSet")
     audioset_loader = AudioSet(root_dir=root_dir)
-    
+
     cls_dir = os.path.join(
-        conf['cluster_dir'],
-        # conf['teacher_model_name'],
-        f"{conf['dataset']['sampler_args']['n_clusters']}_clusters"
+        conf["cluster_dir"], f"{conf['dataset']['sampler_args']['n_clusters']}_clusters"
     )
     cluster_df_path = os.path.join(cls_dir, "predicted_labels.csv")
 
@@ -116,11 +112,11 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
     # 3. Configure Sampler
     # -------------------------------------------------------------------------
     print("\n[3/4] Configuring sampler...")
-    
+
     # Create sampler based on configuration
     sampler_type = conf["dataset"]["sampler"]
     print(f"  Sampler type: {sampler_type}")
-    
+
     if sampler_type == "WeightedRandomSampler":
         sampler = get_ft_weighted_sampler(
             pdf=train_dataset.metadata_df,
@@ -141,7 +137,7 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
             train_dataset=train_dataset,
             num_samples=conf["dataset"]["sampler_args"]["num_samples"],
             replacement=conf["dataset"]["sampler_args"]["replacement"],
-            generator=generator
+            generator=generator,
         )
     else:
         raise ValueError(f"Sampler {sampler_type} is not implemented")
@@ -152,7 +148,7 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
     # 4. Create DataLoaders
     # -------------------------------------------------------------------------
     print("\n[4/4] Creating DataLoaders...")
-    
+
     train_loader = DataLoader(
         dataset=train_dataset,
         batch_size=conf["batch_size"],

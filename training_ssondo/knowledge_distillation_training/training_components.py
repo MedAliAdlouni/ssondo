@@ -11,10 +11,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from .utils import exp_warmup_linear_down
 
 
-def setup_optimizer(
-    conf: dict,
-    student_model: nn.Module
-) -> torch.optim.Optimizer:
+def setup_optimizer(conf: dict, student_model: nn.Module) -> torch.optim.Optimizer:
     """
     Set up optimizer for training.
 
@@ -34,13 +31,11 @@ def setup_optimizer(
 
     if optimizer_name == "AdamW":
         optimizer = torch.optim.AdamW(
-            params=student_model.parameters(),
-            **conf["optimizer_args"]
+            params=student_model.parameters(), **conf["optimizer_args"]
         )
     elif optimizer_name == "Adam":
         optimizer = torch.optim.Adam(
-            params=student_model.parameters(),
-            **conf["optimizer_args"]
+            params=student_model.parameters(), **conf["optimizer_args"]
         )
     else:
         raise ValueError(f"Optimizer {optimizer_name} is not implemented")
@@ -49,9 +44,7 @@ def setup_optimizer(
 
 
 def setup_learning_rate_scheduler(
-    conf: dict,
-    optimizer: torch.optim.Optimizer,
-    train_loader: DataLoader
+    conf: dict, optimizer: torch.optim.Optimizer, train_loader: DataLoader
 ) -> torch.optim.lr_scheduler._LRScheduler | None:
     """
     Set up learning rate scheduler.
@@ -83,19 +76,20 @@ def setup_learning_rate_scheduler(
             n_audios_per_epoch = len(train_loader.dataset)
 
         total_steps = conf["epochs"] * (
-            n_audios_per_epoch // (
-                conf["batch_size"] * 
-                conf["process"]["devices"] * 
-                conf["process"]["num_nodes"]
-            ) + 1  # Add 1 if drop_last=False
+            n_audios_per_epoch
+            // (
+                conf["batch_size"]
+                * conf["process"]["devices"]
+                * conf["process"]["num_nodes"]
+            )
+            + 1  # Add 1 if drop_last=False
         )
 
         # Update config with calculated steps
         conf["lr_scheduler_args"]["total_steps"] = total_steps
 
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer,
-            **conf["lr_scheduler_args"]
+            optimizer, **conf["lr_scheduler_args"]
         )
 
     elif scheduler_name == "CustomScheduler":
@@ -103,7 +97,7 @@ def setup_learning_rate_scheduler(
             conf["lr_scheduler_args"]["warm_up_len"],
             conf["lr_scheduler_args"]["ramp_down_len"],
             conf["lr_scheduler_args"]["ramp_down_start"],
-            conf["lr_scheduler_args"]["last_lr_value"]
+            conf["lr_scheduler_args"]["last_lr_value"],
         )
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, schedule_lambda)
 
@@ -113,9 +107,7 @@ def setup_learning_rate_scheduler(
     return scheduler
 
 
-def setup_loss_fct(
-    conf: dict
-) -> tuple:
+def setup_loss_fct(conf: dict) -> tuple:
     """
     Set up loss functions for prediction and knowledge distillation.
 

@@ -21,9 +21,9 @@ The knowledge distillation training pipeline works as follows:
 - AudioSet dataset downloaded and available at `$DATA/AudioSet`
 - Precomputed teacher embeddings stored in `{teacher_knowledge_path}/{subset}/{filename}.npz` format
 - Cluster labels (optional, for cluster-aware sampling and losses) available at `{cluster_dir}`
-- Environment variables:
-  - `DATA`: Path to data directory (contains AudioSet and teacher knowledge)
-  - `OUTPUTS`: Path to experiment directory (for outputs and clustering results)
+- (Optional) Environment variables:
+  - `DATA`: Path to data directory (defaults to `training_ssondo/data/`)
+  - `OUTPUTS`: Path to experiment directory (defaults to `training_ssondo/outputs/`)
 
 ## Usage
 
@@ -31,8 +31,8 @@ The knowledge distillation training pipeline works as follows:
 
 Run this command from the `training_ssondo` directory:
 
-```powershell
-PS D:\new_projects\ssondo\training_ssondo> uv run -m knowledge_distillation_training.main --conf_id matpac_mn_cosine_50c
+```bash
+uv run -m training_ssondo.knowledge_distillation_training.main --conf_id matpac_mn_cosine_50c
 ```
 
 ### Loss Functions
@@ -96,7 +96,7 @@ To create a custom configuration, edit `config.py` and add a new entry to the `c
 
 ```python
 "your_conf_id": {
-    "exp_dir": os.path.join(os.environ["OUTPUTS"], "knowledge_distillation", "teacher", "student"),
+    "exp_dir": os.path.join(OUTPUTS, "knowledge_distillation", "teacher", "student"),
     
     "student_model": {
         "model_name": "mn10_im",  # or "eres2net", "dymn"
@@ -119,8 +119,8 @@ To create a custom configuration, edit `config.py` and add a new entry to the `c
     },
     
     "dataset": {
-        "teacher_knowledge_path": os.path.join(os.environ["DATA"], "teachers_knowledge", "MATPAC_MCL", ...),
-        "cluster_labels_path": os.path.join(os.environ["OUTPUTS"], "clustering", ...),
+        "teacher_knowledge_path": os.path.join(DATA, "teachers_knowledge", "MATPAC_MCL", ...),
+        "cluster_labels_path": os.path.join(OUTPUTS, "clustering", ...),
         "sampler": "WeightedRandomSamplerSSL",
         "sampler_args": {
             "num_samples": 100000,
@@ -167,8 +167,8 @@ To create a custom configuration, edit `config.py` and add a new entry to the `c
 
 ## Troubleshooting
 
-**Issue: `DATA` or `OUTPUTS` environment variable not set**
-- Solution: Set the `DATA` and `OUTPUTS` environment variables to your data and output directories before running
+**Issue: Data or output directories not found**
+- Solution: Either set the `DATA` and `OUTPUTS` environment variables, or ensure data is in `training_ssondo/data/` and outputs in `training_ssondo/outputs/`
 
 **Issue: Teacher knowledge files not found**
 - Solution: Ensure teacher embeddings are precomputed and available at the path specified in `teacher_knowledge_path`

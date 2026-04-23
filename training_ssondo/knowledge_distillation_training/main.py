@@ -9,7 +9,13 @@ from pprint import pprint
 # Local package imports - refactored modules
 from .data_pipeline import setup_data_pipeline
 from .model import build_student_model
-from .training_components import setup_optimizer, setup_learning_rate_scheduler, setup_loss_fct, configure_trainer, get_checkpoint_callback
+from .training_components import (
+    setup_optimizer,
+    setup_learning_rate_scheduler,
+    setup_loss_fct,
+    configure_trainer,
+    get_checkpoint_callback,
+)
 
 # Local package imports - existing modules
 from .config import conf, common_parameters
@@ -37,7 +43,7 @@ def main(conf: dict) -> None:
         Configuration dictionary containing all experiment settings.
     """
     print(f"Experiment: {conf['conf_id']}, Job ID: {conf['job_id']}")
-    
+
     # Step 1: Reproducibility Setup
     generator = set_random_seeds(conf["seed"])
 
@@ -87,8 +93,14 @@ def main(conf: dict) -> None:
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
-    parser = argparse.ArgumentParser(description="Train knowledge distillation model with refactored pipeline")
-    parser.add_argument("--conf_id", required=True, help="Configuration ID to select the right config from config.py")
+    parser = argparse.ArgumentParser(
+        description="Train knowledge distillation model with refactored pipeline"
+    )
+    parser.add_argument(
+        "--conf_id",
+        required=True,
+        help="Configuration ID to select the right config from config.py",
+    )
     args = parser.parse_args()
     args = vars(args)
     # Merge configurations

@@ -1,6 +1,8 @@
 """Model building functions for knowledge distillation."""
 
-from training_ssondo.utils.student_models.MobileNetV3.model import get_model as get_mobilenet
+from training_ssondo.utils.student_models.MobileNetV3.model import (
+    get_model as get_mobilenet,
+)
 from training_ssondo.utils.student_models.dymn.model import get_model as get_dymn
 from training_ssondo.utils.student_models.ERes2Net.model import ERes2Net
 from training_ssondo.utils.student_models.model_utils import (
@@ -51,7 +53,7 @@ def build_student_model(conf: dict):
             input_dim_t=conf["student_model"]["input_dim_t"],
             se_dims=conf["student_model"]["se_dims"],
             se_agg=conf["student_model"]["se_agg"],
-            se_r=conf["student_model"]["se_r"]
+            se_r=conf["student_model"]["se_r"],
         )
 
     # Dynamic MobileNet (DyMN)
@@ -72,7 +74,7 @@ def build_student_model(conf: dict):
             feat_dim=conf["student_model"]["feat_dim"],
             num_blocks=conf["student_model"]["num_blocks"],
             pooling_func=conf["student_model"]["pooling_func"],
-            add_layer=conf["student_model"]["add_layer"]
+            add_layer=conf["student_model"]["add_layer"],
         )
 
     print(f"  ✓ Backbone built - Embedding size: {model.emb_size}")
@@ -97,7 +99,7 @@ def build_student_model(conf: dict):
             hidden_features_size=hidden_features_size,
             pooling=conf["classification_head"]["pooling"],
             activation_att=conf["classification_head"]["activation_att"],
-            last_activation=conf["classification_head"]["last_activation"]
+            last_activation=conf["classification_head"]["last_activation"],
         )
 
     # RNN-based Heads (LSTM, GRU, RNN)
@@ -110,7 +112,7 @@ def build_student_model(conf: dict):
             num_layers=conf["classification_head"]["num_layers"],
             bidirectional=conf["classification_head"]["bidirectional"],
             n_last_elements=conf["classification_head"]["n_last_elements"],
-            last_activation=conf["classification_head"]["last_activation"]
+            last_activation=conf["classification_head"]["last_activation"],
         )
 
     # Attention RNN Heads
@@ -124,7 +126,7 @@ def build_student_model(conf: dict):
             num_layers=conf["classification_head"]["num_layers"],
             bidirectional=conf["classification_head"]["bidirectional"],
             n_last_elements=conf["classification_head"]["n_last_elements"],
-            last_activation=conf["classification_head"]["last_activation"]
+            last_activation=conf["classification_head"]["last_activation"],
         )
 
     # Linear Head (default)
@@ -134,19 +136,18 @@ def build_student_model(conf: dict):
             n_classes=conf["classification_head"]["n_classes"],
             pooling=conf["classification_head"]["pooling"],
             activation_att=conf["classification_head"]["activation_att"],
-            last_activation=conf["classification_head"]["last_activation"]
+            last_activation=conf["classification_head"]["last_activation"],
         )
 
-    print(f"  ✓ Classification head built - Output classes: {conf['classification_head']['n_classes']}")
+    print(
+        f"  ✓ Classification head built - Output classes: {conf['classification_head']['n_classes']}"
+    )
 
     # -------------------------------------------------------------------------
     # 3. Combine Backbone + Head
     # -------------------------------------------------------------------------
     print("\nCombining backbone and classification head...")
-    student_model = ModelWrapper(
-        model=model,
-        classification_head=class_head
-    )
+    student_model = ModelWrapper(model=model, classification_head=class_head)
     print("  ✓ Complete student model assembled")
 
     print("\n" + "=" * 80)

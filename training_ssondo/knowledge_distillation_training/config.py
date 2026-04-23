@@ -1,6 +1,5 @@
 "Config file to run training experiments."
 
-
 import os
 import string
 import random
@@ -10,62 +9,49 @@ from training_ssondo import DATA, OUTPUTS
 slurm = "SLURM_JOB_ID" in os.environ
 
 if slurm:
-  JOB_ID = os.environ["SLURM_JOB_ID"]
+    JOB_ID = os.environ["SLURM_JOB_ID"]
 else:
-  JOB_ID = "".join(random.choices(
-      string.ascii_letters + string.digits, k=8))
+    JOB_ID = "".join(random.choices(string.ascii_letters + string.digits, k=8))
 
 common_parameters = {
-    "exp_dir": os.path.join(
-        OUTPUTS,
-        "knowledge_distillation",
-        "Placeholder_for_teacher_model_name"
-        "Placeholder_for_student_model_name"),
-
-    "cluster_dir": os.path.join(
-        OUTPUTS,
-        "clustering"),
-
+    "exp_dir": os.path.join(OUTPUTS, "knowledge_distillation"),
+    "cluster_dir": os.path.join(OUTPUTS, "clustering"),
     "process": {
         "num_workers": 8,
         "prefetch": 3,
-        "devices": int(
-            os.environ["SLURM_GPUS_ON_NODE"]) if "SLURM_GPUS_ON_NODE" in os.environ else 1,
-        "num_nodes": int(
-            os.environ.get("SLURM_NNODES", 1)),
+        "devices": int(os.environ["SLURM_GPUS_ON_NODE"])
+        if "SLURM_GPUS_ON_NODE" in os.environ
+        else 1,
+        "num_nodes": int(os.environ.get("SLURM_NNODES", 1)),
         "precision": "16-mixed",
         "persistent_workers": True,
         "pin_memory": True,
     },
-
     "job_id": JOB_ID,
     "seed": 42,
-
     # data preprocessing
     "preprocess": {
         "slice_audio": {
-            "win_len": 10,    # 10 second
+            "win_len": 10,  # 10 second
             "step_size": 10,  # no overlap
         },
         "logmelspec": {
             "win_len": 0.025,  # 800 frames
-            "hop_len": 0.01,   # 320 frames
-            "n_mels": 128,     # 128 mel bands
-            "f_min": 0,        # 0 Hz
-            "f_max": None,     # None, 16 kHz
+            "hop_len": 0.01,  # 320 frames
+            "n_mels": 128,  # 128 mel bands
+            "f_min": 0,  # 0 Hz
+            "f_max": None,  # None, 16 kHz
         },
         "normalize": {
             "mean": 0.0,
             "std": 1.0,
         },
     },
-
     "dataset": {
         "name": "audioset",
         "n_classes": 527,
-
         # Sampler or split
-        # "RandomSampler" or "WeightedRandomSampler" ou "WeightedRandomSamplerSSL"
+        # "RandomSampler" or "WeightedRandomSampler" or "WeightedRandomSamplerSSL"
         "sampler": "RandomSampler",
         "sampler_args": {
             "num_samples": 4,
@@ -74,13 +60,10 @@ common_parameters = {
         },
         "train_shuffle": False,  # necessarily False
     },
-
     # batch size
     "batch_size": 2,
-
     # max_epochs
     "epochs": 1,
-
     # optimizer
     "optimizer": "Adam",
     "optimizer_args": {
@@ -88,61 +71,54 @@ common_parameters = {
         "betas": (0.9, 0.999),
         "weight_decay": 0,
     },
-
     # learning rate scheduler
     "lr_scheduler": "CustomScheduler",
-    "lr_scheduler_args": {"warm_up_len": 8, "ramp_down_start": 80,
-                          "ramp_down_len": 95, "last_lr_value": 0.01},
-
+    "lr_scheduler_args": {
+        "warm_up_len": 8,
+        "ramp_down_start": 80,
+        "ramp_down_len": 95,
+        "last_lr_value": 0.01,
+    },
     # early_stopping
     "early_stopping": False,
     # "early_stopping_args": {
     #     "patience": 10,
     # },
-
     # data augmentation
     "data_augmentation": {
         "mixup": False,
         "mixup_args": {
             "alpha": 0.3,
         },
-
         "spec_augment": False,
     },
-
-    # "teacher_model_name": "MATPAC_MCL",
 }
 
 conf = {
-# ----------- baseline, Supervised Learning, no Knowledge Distillation ----------------------------------------------------------
+    # ----------- baseline, Supervised Learning, no Knowledge Distillation ----------------------------------------------------------
     "baseline_mn_weighted_random_sampling": {
         "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "baseline",
-            "MobileNetV3"),
-  
+            OUTPUTS, "knowledge_distillation", "baseline", "MobileNetV3"
+        ),
         "trainer": {
-            "val_check_interval": None,    # default value
+            "val_check_interval": None,  # default value
             "check_val_every_n_epoch": 1,  # default value
             "num_sanity_val_steps": None,  # default value
         },
-
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
             "teacher_knowledge_path": None,  # Sampler or split
             "sampler": "WeightedRandomSampler",  # "RandomSampler" or "WeightedRandomSampler"
@@ -151,13 +127,10 @@ conf = {
                 "replacement": True,
             },
         },
-
         "prediction_loss": "BCEWithLogits",  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "mn10_im",
             "sr": 32000,
-
             "pretrained_name": "mn10_im.pt",
             "width_mult": 1.0,
             "reduced_tail": False,
@@ -179,75 +152,54 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 1,
-            "lambda": 1,             # just prediction_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": None             # "L1", "MSE", "BCEWithLogits" or none
+            "lambda": 1,
+            "loss": None,  # "L1", "MSE", "BCEWithLogits" or none
         },
-
         "data_augmentation": {
-        "mixup": True,
-        "mixup_args": {
-            "alpha": 0.3,
+            "mixup": True,
+            "mixup_args": {
+                "alpha": 0.3,
+            },
+            "spec_augment": False,
         },
-
-        "spec_augment": False,
-        },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-
-# --------------------------- TEACHER MODEL : MATPAC_MCL ----------------------------------------------------------
-# --------------------------- Student model : MobileNetV3 ---------------------------------------------------------
+    # --------------------------- TEACHER MODEL : MATPAC_MCL ----------------------------------------------------------
+    # --------------------------- Student model : MobileNetV3 ---------------------------------------------------------
     "matpac_mn_cosine_random": {
         "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "MATPAC_MCL",
-            "MobileNetV3"),
-
+            OUTPUTS, "knowledge_distillation", "MATPAC_MCL", "MobileNetV3"
+        ),
         "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "MATPAC_MCL",
-                             "window_length_10s",
-                             "embed"),
-
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "MATPAC_MCL", "window_length_10s", "embed"
+            ),
             "sampler": "RandomSampler",
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "mn10_im",
             "sr": 32000,
-
             "pretrained_name": "mn10_im.pt",
             "width_mult": 1.0,
             "reduced_tail": False,
@@ -269,75 +221,51 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-
     "matpac_mn_cosine_50c": {  # USING CLUSTERS FROM MATPAC MOBILENET
         "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "MATPAC_MCL",
-            "MobileNetV3"),
-
+            OUTPUTS, "knowledge_distillation", "MATPAC_MCL", "MobileNetV3"
+        ),
         "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
-        "cluster_dir": os.path.join(
-            OUTPUTS,
-            "clustering",
-            "MATPAC_MCL"),
-
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "MATPAC_MCL"),
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "MATPAC_MCL",
-                             "window_length_10s",
-                             "embed"),
-            
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "MATPAC_MCL", "window_length_10s", "embed"
+            ),
             "sampler": "WeightedRandomSamplerSSL",
-
             "sampler_args": {
                 "n_clusters": 50,
                 # use kmeans.fit() or kmeans.pfit() to train the clustering model with MiniBatchKMeans
                 "use_fit": True,
             },
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "mn10_im",
             "sr": 32000,
-
             "pretrained_name": "mn10_im.pt",
             "width_mult": 1.0,
             "reduced_tail": False,
@@ -359,71 +287,49 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-# --------------------------- Student model : ERes2Net ----------------------------------------------------------
+    # --------------------------- Student model : ERes2Net ----------------------------------------------------------
     "matpac_eres2net_cosine_50c": {  # USING CLUSTERS FROM MATPAC MOBILENET
         "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "MATPAC_MCL",
-            "ERes2Net"),
-
+            OUTPUTS, "knowledge_distillation", "MATPAC_MCL", "ERes2Net"
+        ),
         "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
-        "cluster_dir": os.path.join(
-            OUTPUTS,
-            "clustering",
-            "MATPAC_MCL"),
-
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "MATPAC_MCL"),
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "MATPAC_MCL",
-                             "window_length_10s",
-                             "embed"),
-
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "MATPAC_MCL", "window_length_10s", "embed"
+            ),
             "sampler": "WeightedRandomSamplerSSL",
-
             "sampler_args": {
                 "n_clusters": 50,
                 # use kmeans.fit() or kmeans.pfit() to train the clustering model with MiniBatchKMeans
                 "use_fit": True,
             },
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "ERes2Net",
             "sr": 32000,
@@ -443,71 +349,49 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-# --------------------------- Student model : DyMN ----------------------------------------------------------
+    # --------------------------- Student model : DyMN ----------------------------------------------------------
     "matpac_dymn_cosine_50c": {  # USING CLUSTERS FROM MATPAC MOBILENET
         "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "MATPAC_MCL",
-            "DyMN"),
-
+            OUTPUTS, "knowledge_distillation", "MATPAC_MCL", "DyMN"
+        ),
         "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
-        "cluster_dir": os.path.join(
-            OUTPUTS,
-            "clustering",
-            "MATPAC_MCL"),
-
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "MATPAC_MCL"),
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "MATPAC_MCL",
-                             "window_length_10s",
-                             "embed"),
-
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "MATPAC_MCL", "window_length_10s", "embed"
+            ),
             "sampler": "WeightedRandomSamplerSSL",
-
             "sampler_args": {
                 "n_clusters": 50,
                 # use kmeans.fit() or kmeans.pfit() to train the clustering model with MiniBatchKMeans
                 "use_fit": True,
             },
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "dymn10_im",
             "sr": 32000,
@@ -526,72 +410,52 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-
-# --------------------------- TEACHER MODEL : M2D ----------------------------------------------------------
-# --------------------------- Student model : MobileNetV3 ----------------------------------------------------------
+    # --------------------------- TEACHER MODEL : M2D ----------------------------------------------------------
+    # --------------------------- Student model : MobileNetV3 ----------------------------------------------------------
     "m2d_mn_cosine_50c": {
         "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "M2D",
-            "MobileNetV3"),
-
-            "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            OUTPUTS, "knowledge_distillation", "M2D", "MobileNetV3"
+        ),
+        "trainer": {
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "M2D",
-                             "window_length_10s",
-                             "embed"),
-
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "M2D", "window_length_10s", "embed"
+            ),
             "sampler": "WeightedRandomSamplerSSL",
-
             "sampler_args": {
                 "n_clusters": 50,
                 # use kmeans.fit() or kmeans.pfit() to train the clustering model with MiniBatchKMeans
                 "use_fit": True,
             },
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "mn10_im",
             "sr": 32000,
-
             "pretrained_name": "mn10_im.pt",
             "width_mult": 1.0,
             "reduced_tail": False,
@@ -613,71 +477,47 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-# --------------------------- Student model : ERes2Net ----------------------------------------------------------
+    # --------------------------- Student model : ERes2Net ----------------------------------------------------------
     "m2d_eres2net_cosine_50c": {
-        "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "M2D",
-            "ERes2Net"),
-
+        "exp_dir": os.path.join(OUTPUTS, "knowledge_distillation", "M2D", "ERes2Net"),
         "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
-        "cluster_dir": os.path.join(
-            OUTPUTS,
-            "clustering",
-            "M2D"),
-
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "M2D"),
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "M2D",
-                             "window_length_10s",
-                             "embed"),
-
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "M2D", "window_length_10s", "embed"
+            ),
             "sampler": "WeightedRandomSamplerSSL",
-
             "sampler_args": {
                 "n_clusters": 50,
                 # use kmeans.fit() or kmeans.pfit() to train the clustering model with MiniBatchKMeans
                 "use_fit": True,
             },
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "ERes2Net",
             "sr": 32000,
@@ -697,71 +537,47 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-# --------------------------- Student model : DyMN ----------------------------------------------------------
+    # --------------------------- Student model : DyMN ----------------------------------------------------------
     "m2d_dymn_cosine_50c": {
-        "exp_dir": os.path.join(
-            OUTPUTS,
-            "knowledge_distillation",
-            "M2D",
-            "DyMN"),
-
+        "exp_dir": os.path.join(OUTPUTS, "knowledge_distillation", "M2D", "DyMN"),
         "trainer": {
-            # "debug": {
-            #     "lmt_train_bt": 0.0001,
-            #     "lmt_val_bt": 0.005,
-            # },
-
-            "val_check_interval": None,    # default value
-            "check_val_every_n_epoch": 1,  # default value
-            "num_sanity_val_steps": None,  # default value
+            "val_check_interval": None,
+            "check_val_every_n_epoch": 1,
+            "num_sanity_val_steps": None,
         },
-
-        "cluster_dir": os.path.join(
-            OUTPUTS,
-            "clustering",
-            "M2D"),
-
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "M2D"),
         "preprocess": {
             # audible settings
             "logmelspec": {
                 "win_len": 0.032,  # 1024 frames
                 "hop_len": 0.016,  # 50% overlap, 512 frames
-                "n_mels": 128,     # 128 mel bands
-                "f_min": 50,       # 50 Hz
-                "f_max": 16000,    # 16 kHz
+                "n_mels": 128,  # 128 mel bands
+                "f_min": 50,  # 50 Hz
+                "f_max": 16000,  # 16 kHz
             },
             "slice_audio": {
-                "win_len": 10,      # 10 seconds -> no slice
-                "step_size": 10,    # no overlap
+                "win_len": 10,  # 10 seconds -> no slice
+                "step_size": 10,  # no overlap
             },
         },
-
         "dataset": {
-            "teacher_knowledge_path":
-                os.path.join(DATA,
-                             "teachers_knowledge",
-                             "M2D",
-                             "window_length_10s",
-                             "embed"),
-
+            "teacher_knowledge_path": os.path.join(
+                DATA, "teachers_knowledge", "M2D", "window_length_10s", "embed"
+            ),
             "sampler": "WeightedRandomSamplerSSL",
-
             "sampler_args": {
                 "n_clusters": 50,
                 # use kmeans.fit() or kmeans.pfit() to train the clustering model with MiniBatchKMeans
                 "use_fit": True,
             },
         },
-
         "prediction_loss": None,  # "FocalLoss", "BCEWithLogits" or None
-
         "student_model": {
             "model_name": "dymn10_im",
             "sr": 32000,
@@ -780,12 +596,10 @@ conf = {
         },
         "knowledge_distillation": {
             "temperature": 0.0,  # temperature for KLDivLoss
-            "lambda": 0,              # just kd_loss :  lam * pred_loss + (1 - lam) * kd_loss # nopep8
-            "loss": "cosine_similarity",             # "L1", "MSE", "BCEWithLogits" or None
+            "lambda": 0,
+            "loss": "cosine_similarity",  # "L1", "MSE", "BCEWithLogits" or None
         },
-
         # To continue training from a checkpoint
         "checkpoint_path": None,
     },
-    
 }
