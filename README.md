@@ -21,7 +21,7 @@
 S-SONDO is the first framework for **self-supervised knowledge distillation** of general audio foundation models. It distills large teacher models into lightweight students that are **up to 61x smaller** while retaining **up to 96% of teacher performance** — using only output embeddings, no logits or layer-level alignment required.
 
 <div align="center">
-<img src="training_ssondo/assets/figure_ssondo_architecture.png" width="700" alt="S-SONDO Architecture">
+<img src="assets/paper_figures/ssondo_framework.png" width="600" alt="S-SONDO Architecture">
 </div>
 
 ## Key Results
