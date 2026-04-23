@@ -48,6 +48,8 @@ Downstream evaluation across **7 audio tasks** (4 music + 3 environmental sound)
 
 <div align="center">
 <img src="assets/paper_figures/bds_cluster_ablation.png" width="500" alt="BDS Cluster Ablation">
+
+*Fig. 2. Ablation on the number of clusters for the Balanced Data Sampling. The fixed dashed line is the random sampling baseline.*
 </div>
 
 ## Quick Start — Inference
