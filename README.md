@@ -40,6 +40,8 @@ Downstream evaluation across **7 audio tasks** (4 music + 3 environmental sound)
 
 <div align="center">
 <img src="assets/paper_figures/loss_comparison.png" width="400" alt="Loss Comparison">
+
+*Table 2. Loss choice for S-SONDO*
 </div>
 
 ### Balanced Data Sampling (BDS) Ablation
