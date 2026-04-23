@@ -1,17 +1,35 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite our ICASSP 2026 paper."
-title: "SSONDO: Self-Supervised Knowledge Distillation for General Audio Representation"
+title: "S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models"
 type: software
 authors:
   - family-names: "El Adlouni"
     given-names: "Mohammed Ali"
+  - family-names: "Quelennec"
+    given-names: "Aurian"
+  - family-names: "Chouteau"
+    given-names: "Pierre"
+  - family-names: "Peeters"
+    given-names: "Geoffroy"
+  - family-names: "Essid"
+    given-names: "Slim"
 license: MIT
 repository-code: "https://github.com/MedAliAdlouni/ssondo_temp"
 preferred-citation:
   type: conference-paper
-  title: "SSONDO: Self-Supervised Knowledge Distillation for General Audio Representation"
+  title: "S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models"
   authors:
     - family-names: "El Adlouni"
       given-names: "Mohammed Ali"
+    - family-names: "Quelennec"
+      given-names: "Aurian"
+    - family-names: "Chouteau"
+      given-names: "Pierre"
+    - family-names: "Peeters"
+      given-names: "Geoffroy"
+    - family-names: "Essid"
+      given-names: "Slim"
   collection-title: "IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)"
   year: 2026
+  institution:
+    name: "LTCI, Télécom Paris, Institut Polytechnique de Paris"
