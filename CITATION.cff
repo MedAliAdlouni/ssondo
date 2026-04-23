@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite our ICASSP 2026 paper."
+title: "SSONDO: Self-Supervised Knowledge Distillation for General Audio Representation"
+type: software
+authors:
+  - family-names: "El Adlouni"
+    given-names: "Mohammed Ali"
+license: MIT
+repository-code: "https://github.com/MedAliAdlouni/ssondo_temp"
+preferred-citation:
+  type: conference-paper
+  title: "SSONDO: Self-Supervised Knowledge Distillation for General Audio Representation"
+  authors:
+    - family-names: "El Adlouni"
+      given-names: "Mohammed Ali"
+  collection-title: "IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)"
+  year: 2026
