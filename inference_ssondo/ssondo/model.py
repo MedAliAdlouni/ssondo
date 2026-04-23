@@ -21,7 +21,7 @@ from ssondo.models.model_utils import (
     ModelWrapper,
 )
 
-HF_REPO_ID = "MedAliAdlouni/ssondo"
+HF_REPO_ID = "mohammedali2501/ssondo"
 
 AVAILABLE_MODELS = {
     "matpac-mobilenetv3": {

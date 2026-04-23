@@ -86,7 +86,7 @@ model = get_ssondo("path/to/checkpoint.ckpt")
 
 `get_ssondo()` auto-detects everything from the checkpoint: student backbone, preprocessing parameters, and classification head. No manual configuration needed.
 
-When you pass a model name (e.g., `"matpac-mobilenetv3"`), the checkpoint is automatically downloaded from [Hugging Face Hub](https://huggingface.co/MedAliAdlouni/ssondo) and cached locally.
+When you pass a model name (e.g., `"matpac-mobilenetv3"`), the checkpoint is automatically downloaded from [Hugging Face Hub](https://huggingface.co/mohammedali2501/ssondo) and cached locally.
 
 ## Citation
 
