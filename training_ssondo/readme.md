@@ -77,8 +77,8 @@ uv run python scripts/generate_metadata.py
 ```
 
 4. **Download teacher models** into `models/teachers/`:
-   - [MATPAC](https://github.com/aurianworld/matpac/releases/download/Initial_release/matpac_10_2048.pt) → `MATPAC_MCL/matpac_plus_6s_2048_enconly.pt`
-   - [M2D](https://github.com/nttcslab/m2d/releases/download/v0.1.0/m2d_vit_base-80x608p16x16-221006-mr7_enconly.zip) → extract to `M2D/`
+   - [MATPAC](https://github.com/aurianworld/matpac) — we use the `matpac_plus_6s_2048_enconly.pt` checkpoint → `MATPAC_MCL/matpac_plus_6s_2048_enconly.pt`
+   - [M2D](https://github.com/nttcslab/m2d) — we use the `m2d_vit_base-80x608p16x16-221006-mr7` checkpoint → extract to `M2D/`
 
 5. **Download student models** into `models/students/`:
    - [MobileNetV3](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/mn10_im.pt) → `MobileNetV3/pretrained_models/mn10_im.pt`
