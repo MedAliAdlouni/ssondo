@@ -22,6 +22,8 @@ S-SONDO is the first framework for **self-supervised knowledge distillation** of
 
 <div align="center">
 <img src="assets/paper_figures/ssondo_framework.png" width="600" alt="S-SONDO Architecture">
+
+*Fig. 1. Overview of the proposed S-SONDO framework. The student embeddings are mapped and aligned with the teacher embeddings in the teacher's latent space through self-supervised knowledge distillation.*
 </div>
 
 ## Key Results
