@@ -171,6 +171,7 @@ conf = {
         "exp_dir": os.path.join(
             OUTPUTS, "knowledge_distillation", "MATPAC_MCL", "MobileNetV3"
         ),
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "MATPAC_MCL"),
         "trainer": {
             "val_check_interval": None,
             "check_val_every_n_epoch": 1,
@@ -422,6 +423,7 @@ conf = {
         "exp_dir": os.path.join(
             OUTPUTS, "knowledge_distillation", "M2D", "MobileNetV3"
         ),
+        "cluster_dir": os.path.join(OUTPUTS, "clustering", "M2D"),
         "trainer": {
             "val_check_interval": None,
             "check_val_every_n_epoch": 1,
