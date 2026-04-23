@@ -1,26 +1,28 @@
-# SSONDO Training Pipeline
+# S-SONDO Training Pipeline
 
-Self-Supervised Knowledge distillation framework for training efficient general audio representation models from large teacher models.
+Official training code for **S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models** (ICASSP 2026).
 
-## Overview
+S-SONDO is the first framework for self-supervised knowledge distillation of general audio foundation models. It distills large teacher models (MATPAC, M2D) into lightweight students (MobileNetV3, ERes2Net, DyMN) that are up to 61x smaller while retaining up to 96% of teacher performance -- using only output embeddings, no logits or layer-level alignment required.
 
-The pipeline implements a four-step knowledge distillation workflow:
+## Pipeline Overview
 
-![SSONDO Training Pipeline](./assets/ssondo_training_pipeline.png)
+![S-SONDO Training Pipeline](./assets/ssondo_training_pipeline.png)
 
-1. **Download AudioSet** - Downloads audio clips from YouTube
-2. **Extract Teacher Knowledge** - Extracts embeddings from teacher models (MATPAC, M2D)
-3. **Cluster Embeddings** - Clusters teacher embeddings for structured knowledge representation
-4. **Train Student Models** - Trains lightweight models (MobileNetV3, ERes2Net, DyMN) to match teacher embeddings
+| Step | Module | Description |
+|------|--------|-------------|
+| 1 | `download_subset_of_audioset/` | Download AudioSet audio clips from YouTube |
+| 2 | `extract_teachers_knowledge/` | Extract embeddings from teacher models |
+| 3 | `cluster_teachers_embeddings/` | Cluster embeddings for balanced data sampling |
+| 4 | `knowledge_distillation_training/` | Train student models via knowledge distillation |
 
 ## Quick Start
 
 ```bash
-cd training_ssondo
-./setup.sh
+git clone https://github.com/MedAliAdlouni/ssondo_temp.git
+cd ssondo_temp/training_ssondo
+./setup.sh          # install deps, download metadata + model checkpoints
+./run_pipeline.sh   # run all 4 steps end-to-end on a small subset
 ```
-
-This single script installs dependencies, downloads AudioSet metadata, teacher/student model checkpoints, and generates the metadata index. After setup, proceed to [Pipeline Workflow](#pipeline-workflow).
 
 ## Installation
 
@@ -35,33 +37,36 @@ This single script installs dependencies, downloads AudioSet metadata, teacher/s
 ./setup.sh
 ```
 
-The script performs these steps:
+The script is idempotent (re-running skips already-downloaded files) and performs:
+
 1. Checks/installs `uv`
-2. Installs Python dependencies (`uv sync`)
+2. Installs Python dependencies (`uv sync --frozen`)
 3. Downloads AudioSet metadata CSVs from Google (~100MB)
 4. Generates the unified `metadata.csv` index
 5. Downloads teacher model checkpoints (~652MB)
 6. Downloads student model checkpoints (~60MB)
 
-The script is idempotent — running it again skips already-downloaded files.
-
 ### Environment Variables (Optional)
 
-By default, `DATA` points to `training_ssondo/data/` and `OUTPUTS` points to `training_ssondo/outputs/`. Override them if your data lives elsewhere:
+All environment variables are optional. Defaults are relative to `training_ssondo/`.
 
-```bash
-export DATA=/path/to/your/data
-export OUTPUTS=/path/to/your/outputs
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATA` | `training_ssondo/data/` | Root data directory |
+| `OUTPUTS` | `training_ssondo/outputs/` | Output directory |
+| `SLURM_JOB_ID` | random 8-char string | Job identification |
+| `SLURM_GPUS_ON_NODE` | `1` | Number of GPUs |
+| `SLURM_NNODES` | `1` | Number of nodes |
 
 ### Manual Setup
 
-If you prefer to set up manually instead of using `setup.sh`:
+<details>
+<summary>Click to expand manual setup instructions</summary>
 
 1. **Install dependencies:**
 ```bash
 pip install uv
-uv sync
+uv sync --frozen
 ```
 
 2. **Download AudioSet metadata** into `data/AudioSet/`:
@@ -77,46 +82,27 @@ uv run python scripts/generate_metadata.py
 ```
 
 4. **Download teacher models** into `models/teachers/`:
-   - [MATPAC](https://github.com/aurianworld/matpac) — we use the `matpac_plus_6s_2048_enconly.pt` checkpoint → `MATPAC_MCL/matpac_plus_6s_2048_enconly.pt`
-   - [M2D](https://github.com/nttcslab/m2d) — we use the `m2d_vit_base-80x608p16x16-221006-mr7` checkpoint → extract to `M2D/`
+   - [MATPAC](https://github.com/aurianworld/matpac) -- we use `matpac_plus_6s_2048_enconly.pt` -> `MATPAC_MCL/matpac_plus_6s_2048_enconly.pt`
+   - [M2D](https://github.com/nttcslab/m2d) -- we use `m2d_vit_base-80x608p16x16-221006-mr7` -> extract to `M2D/`
 
 5. **Download student models** into `models/students/`:
-   - [MobileNetV3](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/mn10_im.pt) → `MobileNetV3/pretrained_models/mn10_im.pt`
-   - [DyMN](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/dymn10_im.pt) → `DyMN/dymn10_im.pt`
-   - ERes2Net — no pretrained weights (random initialization)
+   - [MobileNetV3](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/mn10_im.pt) -> `MobileNetV3/pretrained_models/mn10_im.pt`
+   - [DyMN](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/dymn10_im.pt) -> `DyMN/dymn10_im.pt`
+   - ERes2Net -- no pretrained weights (random initialization)
 
-## Data Format
-
-- **Audio**: Mono, 16kHz WAV files
-- **Spectrograms**: Log-mel, 128 bands, 0-8000 Hz, 25ms window, 10ms hop
-- **Directory structure:**
-```
-data/AudioSet/
-├── balanced_train/
-├── eval/
-├── unbalanced_train/
-├── balanced_train_segments.csv
-├── eval_segments.csv
-├── unbalanced_train_segments.csv
-└── ontology.json
-```
+</details>
 
 ## Pipeline Workflow
 
-### Step 1: Download AudioSet Subset
+### Step 1: Download AudioSet
 
 ```bash
 uv run python -m training_ssondo.download_subset_of_audioset.download_audioset \
     --metadata-csv data/AudioSet/eval_segments.csv \
-    --n-clips 1000 \
-    --subset-name eval \
-    --random-state 42 \
-    --max-workers 5
+    --subset-name eval --n-clips 1000 --max-workers 5
 ```
 
-**Output:** `data/AudioSet/{subset_name}/`
-
-**See:** [download_subset_of_audioset/README.md](download_subset_of_audioset/README.md)
+Downloads audio clips from YouTube via `yt-dlp`, extracts segments, converts to mono 16kHz WAV. See [download_subset_of_audioset/README.md](download_subset_of_audioset/README.md).
 
 ### Step 2: Extract Teacher Knowledge
 
@@ -124,34 +110,24 @@ uv run python -m training_ssondo.download_subset_of_audioset.download_audioset \
 uv run -m training_ssondo.extract_teachers_knowledge.audioset_feature_extraction --conf_id matpac_mcl_eval
 ```
 
-**Configuration:** Edit `extract_teachers_knowledge/config.py`
-
-**Output:** `data/teachers_knowledge/{teacher_model}/{window_length}/{output_type}/{subset}/{filename}.npz`
-
-**See:** [extract_teachers_knowledge/README.md](extract_teachers_knowledge/README.md)
+Runs audio through teacher models and saves embeddings as `.npz` files. Available configs: `matpac_mcl_train`, `matpac_mcl_eval`, `m2d_train`, `m2d_eval`. See [extract_teachers_knowledge/README.md](extract_teachers_knowledge/README.md).
 
 ### Step 3: Cluster Teacher Embeddings
 
-1. **Train clustering model:**
+```bash
+# Run all 3 steps at once
+./cluster_teachers_embeddings/run_clustering.sh 50_clusters_fit_matpac
+```
+
+Or run each step individually:
+
 ```bash
 uv run -m training_ssondo.cluster_teachers_embeddings.learn_kmeans --conf_id 50_clusters_fit_matpac
-```
-
-2. **Predict cluster labels:**
-```bash
 uv run -m training_ssondo.cluster_teachers_embeddings.label_prediction --conf_id 50_clusters_fit_matpac
-```
-
-3. **Evaluate clustering:**
-```bash
 uv run -m training_ssondo.cluster_teachers_embeddings.evaluate_clustering --conf_id 50_clusters_fit_matpac
 ```
 
-**Configuration:** Edit `cluster_teachers_embeddings/config.py`
-
-**Output:** `outputs/clustering/{teacher_model}/{n_clusters}_clusters/`
-
-**See:** [cluster_teachers_embeddings/README.md](cluster_teachers_embeddings/README.md)
+Trains MiniBatchKMeans on teacher embeddings, predicts cluster labels, and evaluates with silhouette/Calinski-Harabasz/Davies-Bouldin metrics. See [cluster_teachers_embeddings/README.md](cluster_teachers_embeddings/README.md).
 
 ### Step 4: Knowledge Distillation Training
 
@@ -159,75 +135,84 @@ uv run -m training_ssondo.cluster_teachers_embeddings.evaluate_clustering --conf
 uv run -m training_ssondo.knowledge_distillation_training.main --conf_id matpac_mn_cosine_50c
 ```
 
-**Configuration:** Edit `knowledge_distillation_training/config.py`
+Trains a student model to match teacher embeddings. See [knowledge_distillation_training/README.md](knowledge_distillation_training/README.md).
 
-**Key parameters:**
-- `teacher_knowledge_path`: Path to teacher embeddings
-- `cluster_labels_path`: Path to cluster assignments (optional, only for cluster-aware sampling)
-- `classification_head.n_classes`: Must match teacher embedding dimension
-- `knowledge_distillation.loss`: Loss type (MSE, L1, cosine_similarity, contrastive_loss, etc.)
-- `knowledge_distillation.lambda`: Weight between prediction and distillation loss
+**Available configurations:**
 
-**Output:** `outputs/knowledge_distillation/{teacher_model}/{student_model}/{conf_id}/{job_id}/`
+| `conf_id` | Teacher | Student | Sampler |
+|-----------|---------|---------|---------|
+| `baseline_mn_weighted_random_sampling` | -- | MobileNetV3 | WeightedRandom |
+| `matpac_mn_cosine_random` | MATPAC | MobileNetV3 | Random |
+| `matpac_mn_cosine_50c` | MATPAC | MobileNetV3 | ClusterAware (50c) |
+| `matpac_eres2net_cosine_50c` | MATPAC | ERes2Net | ClusterAware (50c) |
+| `matpac_dymn_cosine_50c` | MATPAC | DyMN | ClusterAware (50c) |
+| `m2d_mn_cosine_50c` | M2D | MobileNetV3 | ClusterAware (50c) |
+| `m2d_eres2net_cosine_50c` | M2D | ERes2Net | ClusterAware (50c) |
+| `m2d_dymn_cosine_50c` | M2D | DyMN | ClusterAware (50c) |
 
-**See:** [knowledge_distillation_training/README.md](knowledge_distillation_training/README.md)
-
-## Configuration
-
-### Student Models
-- **MobileNetV3**: Lightweight CNN architecture
-- **ERes2Net**: Efficient Res2Net variant
-- **DyMN**: Dynamic MobileNet with adaptive computation
+## Architecture
 
 ### Teacher Models
-- **MATPAC_MCL**: Multi-level contrastive learning model
-- **M2D**: Masked Modeling Duo
+- **[MATPAC](https://github.com/aurianworld/matpac)**: Multi-level contrastive learning audio model (checkpoint: `matpac_plus_6s_2048_enconly.pt`)
+- **[M2D](https://github.com/nttcslab/m2d)**: Masked Modeling Duo self-supervised model (checkpoint: `m2d_vit_base-80x608p16x16-221006-mr7`)
+
+### Student Models
+- **[MobileNetV3](https://github.com/fschmid56/EfficientAT)**: Lightweight CNN (2.9M params)
+- **ERes2Net**: Efficient Res2Net variant
+- **[DyMN](https://github.com/fschmid56/EfficientAT)**: Dynamic MobileNet with adaptive computation
 
 ### Loss Functions
-- MSE, L1, Cosine Similarity
-- Contrastive Loss (vanilla, cluster-aware, hybrid)
-- KL Divergence (with temperature scaling)
+- **Standard**: MSE, L1, Cosine Similarity, KL Divergence
+- **Contrastive**: Vanilla, Cluster-aware, Negative-clusters-only, Hybrid
+- **Combined**: `loss = lambda * pred_loss + (1 - lambda) * kd_loss`
 
 ### Data Augmentation
-- Mixup
-- SpecAugment (time/frequency masking)
-- Normalization
+- **Mixup** with configurable alpha
+- **SpecAugment** (time/frequency masking)
 
 ## Directory Structure
 
 ```
 training_ssondo/
-├── readme.md
+├── setup.sh                         # One-command setup
+├── run_pipeline.sh                  # End-to-end demo
 ├── pyproject.toml
 ├── __init__.py                      # DATA and OUTPUTS defaults
+├── scripts/
+│   └── generate_metadata.py         # Generates metadata.csv from AudioSet CSVs
 ├── data/
-│   ├── AudioSet/
-│   └── teachers_knowledge/
+│   ├── AudioSet/                    # Audio files + metadata
+│   └── teachers_knowledge/          # Extracted teacher embeddings
 ├── outputs/
-│   ├── clustering/
-│   └── knowledge_distillation/
+│   ├── clustering/                  # Clustering results
+│   └── knowledge_distillation/      # Trained student models
 ├── models/
-│   ├── teachers/
-│   └── students/
-├── download_subset_of_audioset/
-├── extract_teachers_knowledge/
-├── cluster_teachers_embeddings/
-├── knowledge_distillation_training/
+│   ├── teachers/                    # Teacher checkpoints (MATPAC, M2D)
+│   └── students/                    # Student checkpoints (MobileNetV3, DyMN)
+├── download_subset_of_audioset/     # Step 1: Download AudioSet
+├── extract_teachers_knowledge/      # Step 2: Extract teacher embeddings
+├── cluster_teachers_embeddings/     # Step 3: Cluster embeddings
+├── knowledge_distillation_training/ # Step 4: Train student models
 └── utils/
-    ├── audioset_loader.py
-    ├── preprocess.py
-    ├── portable_m2d.py
-    └── student_models/
+    ├── audioset_loader.py           # AudioSet metadata management
+    ├── preprocess.py                # LogMelSpectrogram, SliceAudio transforms
+    ├── portable_m2d.py              # M2D runtime
+    └── student_models/              # MobileNetV3, ERes2Net, DyMN architectures
 ```
 
-## Environment Variables
+## Citation
 
-All environment variables are optional. Defaults are relative to the `training_ssondo/` directory.
+If you use this code, please cite our paper:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DATA` | `training_ssondo/data/` | Root data directory |
-| `OUTPUTS` | `training_ssondo/outputs/` | Output directory |
-| `SLURM_JOB_ID` | random 8-char string | Job identification |
-| `SLURM_GPUS_ON_NODE` | `1` | Number of GPUs |
-| `SLURM_NNODES` | `1` | Number of nodes |
+```bibtex
+@inproceedings{eladlouni2026ssondo,
+  title={S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models},
+  author={El Adlouni, Mohammed Ali and Quelennec, Aurian and Chouteau, Pierre and Peeters, Geoffroy and Essid, Slim},
+  booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+  year={2026}
+}
+```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](../LICENSE) for details.
