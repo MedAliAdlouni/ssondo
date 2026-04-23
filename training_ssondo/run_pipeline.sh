@@ -12,35 +12,50 @@ echo "  SSONDO Pipeline - End-to-End Demo"
 echo "========================================================================"
 
 # ---------------------------------------------------------------------------
-# Step 1: Download a small subset of AudioSet
+# Step 1: Download a small subset of AudioSet (eval + train)
 # ---------------------------------------------------------------------------
 echo ""
-echo "[1/4] Downloading AudioSet eval clips..."
+echo "[1/4] Downloading AudioSet clips..."
+
+echo "  Downloading eval subset..."
 uv run python -m training_ssondo.download_subset_of_audioset.download_audioset \
     --metadata-csv data/AudioSet/eval_segments.csv \
     --subset-name eval \
     --n-clips 64 \
     --max-workers 5
 
+echo "  Downloading balanced_train subset..."
+uv run python -m training_ssondo.download_subset_of_audioset.download_audioset \
+    --metadata-csv data/AudioSet/balanced_train_segments.csv \
+    --subset-name balanced_train \
+    --n-clips 64 \
+    --max-workers 5
+
 # ---------------------------------------------------------------------------
-# Step 2: Extract teacher knowledge
+# Step 2: Extract teacher knowledge (eval + train)
 # ---------------------------------------------------------------------------
 echo ""
 echo "[2/4] Extracting teacher embeddings (MATPAC)..."
+
+echo "  Extracting eval embeddings..."
 uv run -m training_ssondo.extract_teachers_knowledge.audioset_feature_extraction \
     --conf_id matpac_mcl_eval
+
+echo "  Extracting train embeddings..."
+uv run -m training_ssondo.extract_teachers_knowledge.audioset_feature_extraction \
+    --conf_id matpac_mcl_train
 
 # ---------------------------------------------------------------------------
 # Step 3: Cluster teacher embeddings
 # ---------------------------------------------------------------------------
 echo ""
-echo "[3/4] Clustering teacher embeddings (10 clusters)..."
+echo "[3/4] Clustering teacher embeddings (50 clusters)..."
 uv run -m training_ssondo.cluster_teachers_embeddings.learn_kmeans \
-    --conf_id 10_clusters_fit_matpac
+    --conf_id 50_clusters_fit_matpac
 uv run -m training_ssondo.cluster_teachers_embeddings.label_prediction \
-    --conf_id 10_clusters_fit_matpac
+    --conf_id 50_clusters_fit_matpac
 uv run -m training_ssondo.cluster_teachers_embeddings.evaluate_clustering \
-    --conf_id 10_clusters_fit_matpac
+    --conf_id 50_clusters_fit_matpac
 
 # ---------------------------------------------------------------------------
 # Step 4: Train student model (1 epoch)
@@ -48,7 +63,7 @@ uv run -m training_ssondo.cluster_teachers_embeddings.evaluate_clustering \
 echo ""
 echo "[4/4] Training student model (MobileNetV3, 1 epoch)..."
 uv run -m training_ssondo.knowledge_distillation_training.main \
-    --conf_id matpac_mn_cosine_random
+    --conf_id matpac_mn_cosine_50c
 
 echo ""
 echo "========================================================================"
