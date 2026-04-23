@@ -88,7 +88,7 @@ echo "[5/6] Downloading teacher model checkpoints..."
 download "https://github.com/aurianworld/matpac/releases/download/MATPAC%2B%2B/matpac_plus_6s_2048_enconly.pt" \
          "$MODELS_DIR/teachers/MATPAC_MCL/matpac_plus_6s_2048_enconly.pt"
 
-# M2D (zip archive)
+# M2D (zip archive — extract and rename checkpoint to M2D_ssl.pth)
 M2D_DIR="$MODELS_DIR/teachers/M2D/m2d_vit_base-80x608p16x16-221006-mr7_enconly"
 if [[ -f "$M2D_DIR/M2D_ssl.pth" ]]; then
     echo "  Already exists: M2D_ssl.pth"
@@ -99,6 +99,7 @@ else
     echo "  Extracting M2D checkpoint..."
     mkdir -p "$M2D_DIR"
     unzip -qo "$M2D_ZIP" -d "$MODELS_DIR/teachers/M2D/"
+    mv "$M2D_DIR/checkpoint-300.pth" "$M2D_DIR/M2D_ssl.pth"
     rm -f "$M2D_ZIP"
 fi
 
