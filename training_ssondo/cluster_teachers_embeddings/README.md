@@ -66,9 +66,17 @@ kmeans = MiniBatchKMeans(
 
 ## Usage
 
-### Basic Usage
+### Quick Start
 
-Run the pipeline from the `training_ssondo` directory:
+Run all 3 clustering steps at once using the convenience script:
+
+```bash
+./cluster_teachers_embeddings/run_clustering.sh 50_clusters_fit_matpac
+```
+
+### Step-by-Step
+
+Run each step individually from the `training_ssondo` directory:
 
 #### 1. Train Clustering Model
 
