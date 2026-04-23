@@ -1,7 +1,7 @@
-"""S-SONDO inference module.
+"""S-SONDO inference and finetuning module.
 
 Provides `get_ssondo()` to load a trained student model and return an
-nn.Module ready for inference on raw audio waveforms.
+nn.Module ready for inference or downstream finetuning on raw audio.
 """
 
 from __future__ import annotations
@@ -69,12 +69,7 @@ def list_models() -> dict[str, str]:
 
 
 def _resolve_checkpoint(checkpoint: str, device: str = "cpu") -> dict:
-    """Resolve a checkpoint path or model name to a loaded checkpoint dict.
-
-    Supports:
-    - Local file path (e.g., "path/to/checkpoint.ckpt")
-    - Pretrained model name (e.g., "matpac-mobilenetv3") — auto-downloads from HF Hub
-    """
+    """Resolve a checkpoint path or model name to a loaded checkpoint dict."""
     import os
 
     if os.path.isfile(checkpoint):
@@ -180,9 +175,10 @@ def _build_student_model(conf: dict) -> ModelWrapper:
 
 
 class SsondoWrapper(nn.Module):
-    """End-to-end inference wrapper for S-SONDO student models.
+    """End-to-end wrapper for S-SONDO student models.
 
-    Takes raw mono audio waveforms and returns embeddings (and optionally logits).
+    Supports inference, embedding extraction, and downstream finetuning
+    with frozen backbone.
     """
 
     def __init__(self, student_model, slicer, logmel, return_logits=False):
@@ -191,6 +187,16 @@ class SsondoWrapper(nn.Module):
         self.slicer = slicer
         self.logmel = logmel
         self.return_logits = return_logits
+
+    @property
+    def backbone(self) -> nn.Module:
+        """The backbone feature extractor (e.g., MobileNetV3)."""
+        return self.student_model.model
+
+    @property
+    def embedding_dim(self) -> int:
+        """Dimensionality of the backbone embeddings."""
+        return self.student_model.model.emb_size
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
         """Convert raw audio to log-mel spectrogram segments.
@@ -211,6 +217,61 @@ class SsondoWrapper(nn.Module):
         x = self.slicer(x)
         x = self.logmel(x)
         return x
+
+    def get_embeddings(self, x: torch.Tensor) -> torch.Tensor:
+        """Extract embeddings from raw audio (no classification head).
+
+        Runs the backbone only and mean-pools over segments to produce
+        a single embedding vector per audio clip.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Raw mono audio at the expected sample rate (typically 32 kHz).
+            Shape: ``(batch, n_samples)`` or ``(n_samples,)``.
+
+        Returns
+        -------
+        torch.Tensor
+            Embeddings of shape ``(batch, embedding_dim)``.
+
+        Example
+        -------
+        >>> model = get_ssondo("matpac-mobilenetv3")
+        >>> emb = model.get_embeddings(audio)  # (batch, 960)
+        """
+        x = self.preprocess(x)
+        # backbone returns (batch, n_segments, emb_dim)
+        emb = self.student_model.model(x)
+        # mean-pool over segments
+        if emb.ndim == 3:
+            emb = emb.mean(dim=1)
+        return emb
+
+    def freeze_backbone(self) -> None:
+        """Freeze all backbone parameters (for linear probing / finetuning).
+
+        After calling this, only newly added layers (e.g., a linear
+        classifier) will be updated during training. The preprocessing
+        layers are also frozen.
+
+        Example
+        -------
+        >>> model = get_ssondo("matpac-mobilenetv3")
+        >>> model.freeze_backbone()
+        >>> # Only a new head's parameters will be trainable
+        """
+        for param in self.student_model.model.parameters():
+            param.requires_grad = False
+        for param in self.slicer.parameters():
+            param.requires_grad = False
+        for param in self.logmel.parameters():
+            param.requires_grad = False
+
+    def unfreeze_backbone(self) -> None:
+        """Unfreeze all backbone parameters (for full finetuning)."""
+        for param in self.student_model.model.parameters():
+            param.requires_grad = True
 
     def forward(
         self, x: torch.Tensor
@@ -241,7 +302,7 @@ def get_ssondo(
     return_logits: bool = False,
     device: str = "cpu",
 ) -> SsondoWrapper:
-    """Load a pretrained S-SONDO model ready for inference.
+    """Load a pretrained S-SONDO model ready for inference or finetuning.
 
     Parameters
     ----------
@@ -260,13 +321,20 @@ def get_ssondo(
     SsondoWrapper
         An ``nn.Module`` in eval mode.
 
-    Example
-    -------
-    >>> import torchaudio
-    >>> from ssondo import get_ssondo
+    Examples
+    --------
+    Inference:
+
     >>> model = get_ssondo("matpac-mobilenetv3")
-    >>> x, sr = torchaudio.load("audio.wav")
-    >>> embeddings = model(x.mean(0, keepdim=True))  # mono
+    >>> embeddings = model(audio)
+
+    Linear probing (frozen backbone):
+
+    >>> model = get_ssondo("matpac-mobilenetv3")
+    >>> model.freeze_backbone()
+    >>> head = torch.nn.Linear(model.embedding_dim, num_classes)
+    >>> emb = model.get_embeddings(audio)  # (batch, 960)
+    >>> logits = head(emb)
     """
     ckpt = _resolve_checkpoint(checkpoint, device)
     conf = ckpt["training_config"]

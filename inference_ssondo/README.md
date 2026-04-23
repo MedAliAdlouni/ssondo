@@ -76,6 +76,40 @@ embeddings = model(audio.cuda())
 model = get_ssondo("path/to/checkpoint.ckpt")
 ```
 
+### Finetuning with Frozen Backbone (Linear Probe)
+
+```python
+import torch
+from ssondo import get_ssondo
+
+model = get_ssondo("matpac-mobilenetv3")
+model.freeze_backbone()  # freeze all backbone params
+model.train()
+
+# Add a linear classifier for your task
+head = torch.nn.Linear(model.embedding_dim, num_classes)
+
+# Extract embeddings (backbone frozen, no grad)
+emb = model.get_embeddings(audio)  # (batch, 960)
+logits = head(emb)
+loss = criterion(logits, labels)
+loss.backward()  # only head parameters are updated
+```
+
+### Full Finetuning
+
+```python
+model = get_ssondo("matpac-mobilenetv3")
+model.train()  # all parameters trainable by default
+```
+
+### Useful Properties
+
+```python
+model.embedding_dim   # 960 — size of backbone embeddings
+model.backbone        # the raw backbone nn.Module (e.g., MobileNetV3)
+```
+
 ## Input Requirements
 
 - **Mono audio** (single channel)
