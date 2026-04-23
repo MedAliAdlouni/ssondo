@@ -46,6 +46,15 @@ echo ""
 echo "[2/6] Installing Python dependencies..."
 cd "$SCRIPT_DIR"
 uv sync --frozen
+
+# Patch matpac dataclass bug (mutable default incompatible with Python 3.12)
+MATPAC_MODEL="$SCRIPT_DIR/.venv/lib/python3.12/site-packages/matpac/model.py"
+if grep -q 'encoder_layers_config()' "$MATPAC_MODEL" 2>/dev/null; then
+    echo "  Patching matpac for Python 3.12 compatibility..."
+    sed -i.bak 's/from dataclasses import dataclass/from dataclasses import dataclass, field/' "$MATPAC_MODEL"
+    sed -i.bak 's/encoder: encoder_layers_config = encoder_layers_config()/encoder: encoder_layers_config = field(default_factory=encoder_layers_config)/' "$MATPAC_MODEL"
+    rm -f "$MATPAC_MODEL.bak"
+fi
 echo "  Dependencies installed."
 
 # ---------------------------------------------------------------------------
