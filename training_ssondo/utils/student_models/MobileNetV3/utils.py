@@ -26,8 +26,13 @@ def cnn_out_size(in_size, padding, dilation, kernel, stride):
     return math.floor(s / stride + 1)
 
 
-def collapse_dim(x: Tensor, dim: int, mode: str = "pool", pool_fn:  Callable[[Tensor, int], Tensor] = torch.mean,
-                 combine_dim: int = None):
+def collapse_dim(
+    x: Tensor,
+    dim: int,
+    mode: str = "pool",
+    pool_fn: Callable[[Tensor, int], Tensor] = torch.mean,
+    combine_dim: int = None,
+):
     """
     Collapses dimension of multi-dimensional tensor by pooling or combining dimensions
     :param x: input Tensor
@@ -47,8 +52,13 @@ def collapse_dim(x: Tensor, dim: int, mode: str = "pool", pool_fn:  Callable[[Te
 
 
 class CollapseDim(nn.Module):
-    def __init__(self, dim: int, mode: str = "pool", pool_fn:  Callable[[Tensor, int], Tensor] = torch.mean,
-                 combine_dim: int = None):
+    def __init__(
+        self,
+        dim: int,
+        mode: str = "pool",
+        pool_fn: Callable[[Tensor, int], Tensor] = torch.mean,
+        combine_dim: int = None,
+    ):
         super(CollapseDim, self).__init__()
         self.dim = dim
         self.mode = mode
@@ -56,4 +66,10 @@ class CollapseDim(nn.Module):
         self.combine_dim = combine_dim
 
     def forward(self, x):
-        return collapse_dim(x, dim=self.dim, mode=self.mode, pool_fn=self.pool_fn, combine_dim=self.combine_dim)
+        return collapse_dim(
+            x,
+            dim=self.dim,
+            mode=self.mode,
+            pool_fn=self.pool_fn,
+            combine_dim=self.combine_dim,
+        )

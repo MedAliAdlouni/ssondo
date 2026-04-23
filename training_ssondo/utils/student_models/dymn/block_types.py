@@ -8,30 +8,26 @@ from .utils import make_divisible, cnn_out_size
 
 
 class ConcurrentSEBlock(torch.nn.Module):
-    def __init__(
-        self,
-        c_dim: int,
-        f_dim: int,
-        t_dim: int,
-        se_cnf: Dict
-    ) -> None:
+    def __init__(self, c_dim: int, f_dim: int, t_dim: int, se_cnf: Dict) -> None:
         super().__init__()
         dims = [c_dim, f_dim, t_dim]
         self.conc_se_layers = nn.ModuleList()
-        for d in se_cnf['se_dims']:
-            input_dim = dims[d-1]
-            squeeze_dim = make_divisible(input_dim // se_cnf['se_r'], 8)
+        for d in se_cnf["se_dims"]:
+            input_dim = dims[d - 1]
+            squeeze_dim = make_divisible(input_dim // se_cnf["se_r"], 8)
             self.conc_se_layers.append(SqueezeExcitation(input_dim, squeeze_dim, d))
-        if se_cnf['se_agg'] == "max":
+        if se_cnf["se_agg"] == "max":
             self.agg_op = lambda x: torch.max(x, dim=0)[0]
-        elif se_cnf['se_agg'] == "avg":
+        elif se_cnf["se_agg"] == "avg":
             self.agg_op = lambda x: torch.mean(x, dim=0)
-        elif se_cnf['se_agg'] == "add":
+        elif se_cnf["se_agg"] == "add":
             self.agg_op = lambda x: torch.sum(x, dim=0)
-        elif se_cnf['se_agg'] == "min":
+        elif se_cnf["se_agg"] == "min":
             self.agg_op = lambda x: torch.min(x, dim=0)[0]
         else:
-            raise NotImplementedError(f"SE aggregation operation '{self.agg_op}' not implemented")
+            raise NotImplementedError(
+                f"SE aggregation operation '{self.agg_op}' not implemented"
+            )
 
     def forward(self, input: Tensor) -> Tensor:
         # apply all concurrent se layers
@@ -123,13 +119,15 @@ class InvertedResidual(nn.Module):
         cnf: InvertedResidualConfig,
         se_cnf: Dict,
         norm_layer: Callable[..., nn.Module],
-        depthwise_norm_layer: Callable[..., nn.Module]
+        depthwise_norm_layer: Callable[..., nn.Module],
     ):
         super().__init__()
         if not (1 <= cnf.stride <= 2):
             raise ValueError("illegal stride value")
 
-        self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.out_channels
+        self.use_res_connect = (
+            cnf.stride == 1 and cnf.input_channels == cnf.out_channels
+        )
 
         layers: List[nn.Module] = []
         activation_layer = nn.Hardswish if cnf.use_hs else nn.ReLU
@@ -160,13 +158,19 @@ class InvertedResidual(nn.Module):
                 activation_layer=activation_layer,
             )
         )
-        if cnf.use_se and se_cnf['se_dims'] is not None:
-            layers.append(ConcurrentSEBlock(cnf.expanded_channels, cnf.f_dim, cnf.t_dim, se_cnf))
+        if cnf.use_se and se_cnf["se_dims"] is not None:
+            layers.append(
+                ConcurrentSEBlock(cnf.expanded_channels, cnf.f_dim, cnf.t_dim, se_cnf)
+            )
 
         # project
         layers.append(
             ConvNormActivation(
-                cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
+                cnf.expanded_channels,
+                cnf.out_channels,
+                kernel_size=1,
+                norm_layer=norm_layer,
+                activation_layer=None,
             )
         )
 

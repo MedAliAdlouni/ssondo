@@ -112,22 +112,24 @@ def generate_metadata(data_dir: str, output_path: str):
                     label_name = mid_to_name.get(mid, mid)
                     label_idx = mid_to_idx.get(mid, -1)
 
-                    writer.writerow([
-                        row_idx,
-                        video_id,
-                        file_path,
-                        subset,
-                        start,
-                        end,
-                        label_name,
-                        label_idx,
-                        "",
-                        1,
-                        16000,
-                        10.0,
-                        8000,
-                        "",
-                    ])
+                    writer.writerow(
+                        [
+                            row_idx,
+                            video_id,
+                            file_path,
+                            subset,
+                            start,
+                            end,
+                            label_name,
+                            label_idx,
+                            "",
+                            1,
+                            16000,
+                            10.0,
+                            8000,
+                            "",
+                        ]
+                    )
                     row_idx += 1
 
             total_rows += len(segments)
@@ -139,7 +141,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate AudioSet metadata.csv")
     parser.add_argument(
         "--data-dir",
-        default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "AudioSet"),
+        default=os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "data", "AudioSet"
+        ),
         help="Path to AudioSet data directory",
     )
     args = parser.parse_args()

@@ -26,8 +26,13 @@ def cnn_out_size(in_size, padding, dilation, kernel, stride):
     return math.floor(s / stride + 1)
 
 
-def collapse_dim(x: Tensor, dim: int, mode: str = "pool", pool_fn:  Callable[[Tensor, int], Tensor] = torch.mean,
-                 combine_dim: int = None):
+def collapse_dim(
+    x: Tensor,
+    dim: int,
+    mode: str = "pool",
+    pool_fn: Callable[[Tensor, int], Tensor] = torch.mean,
+    combine_dim: int = None,
+):
     """
     Collapses dimension of multi-dimensional tensor by pooling or combining dimensions
     :param x: input Tensor
@@ -47,8 +52,13 @@ def collapse_dim(x: Tensor, dim: int, mode: str = "pool", pool_fn:  Callable[[Te
 
 
 class CollapseDim(nn.Module):
-    def __init__(self, dim: int, mode: str = "pool", pool_fn:  Callable[[Tensor, int], Tensor] = torch.mean,
-                 combine_dim: int = None):
+    def __init__(
+        self,
+        dim: int,
+        mode: str = "pool",
+        pool_fn: Callable[[Tensor, int], Tensor] = torch.mean,
+        combine_dim: int = None,
+    ):
         super(CollapseDim, self).__init__()
         self.dim = dim
         self.mode = mode
@@ -56,73 +66,79 @@ class CollapseDim(nn.Module):
         self.combine_dim = combine_dim
 
     def forward(self, x):
-        return collapse_dim(x, dim=self.dim, mode=self.mode, pool_fn=self.pool_fn, combine_dim=self.combine_dim)
+        return collapse_dim(
+            x,
+            dim=self.dim,
+            mode=self.mode,
+            pool_fn=self.pool_fn,
+            combine_dim=self.combine_dim,
+        )
 
 
 def get_layers_to_fuse(model):
-  """
-  Identify and group layers in a model for fusion.
+    """
+    Identify and group layers in a model for fusion.
 
-  This function iterates through the layers of a given model to identify groups
-  of layers that can be fused together. It specifically targets sequences of
-  Conv2d, BatchNorm2d, and ReLU layers, or just Conv2d and BatchNorm2d layers,
-  that can be fused to optimize the model for inference.
+    This function iterates through the layers of a given model to identify groups
+    of layers that can be fused together. It specifically targets sequences of
+    Conv2d, BatchNorm2d, and ReLU layers, or just Conv2d and BatchNorm2d layers,
+    that can be fused to optimize the model for inference.
 
-  Parameters
-  ----------
-  model : nn.Module
-    The neural network model containing the layers to be analyzed.
+    Parameters
+    ----------
+    model : nn.Module
+      The neural network model containing the layers to be analyzed.
 
-  Returns
-  -------
-  layers_to_fuse : list of list of str
-    A list where each element is a list of layer names that can be fused
-    together.
-  """
+    Returns
+    -------
+    layers_to_fuse : list of list of str
+      A list where each element is a list of layer names that can be fused
+      together.
+    """
 
-  layers_to_fuse = []
-  layer_names = []
+    layers_to_fuse = []
+    layer_names = []
 
-  prev_type = None
+    prev_type = None
 
-  for name, module in model.named_modules():
-    if isinstance(module, nn.Conv2d) and prev_type in [None, "relu"]:
-      # If the current layer is Conv2d and the previous layer was None or ReLU
-      if layer_names:
-        # If there are layers in layer_names, add them to layers_to_fuse
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d) and prev_type in [None, "relu"]:
+            # If the current layer is Conv2d and the previous layer was None or ReLU
+            if layer_names:
+                # If there are layers in layer_names, add them to layers_to_fuse
+                layers_to_fuse.append(layer_names)
+
+            # Start a new group with the current Conv2d layer and update prev_type
+            layer_names = [name]
+            prev_type = "conv"
+
+        elif isinstance(module, nn.BatchNorm2d) and prev_type == "conv":
+            # If the current layer is BatchNorm2d and the previous layer was Conv2d
+            # Add the current BatchNorm2d layer to the current group and update
+            # prev_type
+            layer_names.append(name)
+            prev_type = "bn"
+
+        elif isinstance(module, nn.ReLU) and prev_type == "bn":
+            # If the current layer is ReLU and the previous layer was BatchNorm2d
+            # Add the current ReLU layer to the current group, add the group to
+            # layers_to_fuse and update prev_type
+            layer_names.append(name)
+            layers_to_fuse.append(layer_names)
+            layer_names = []
+            prev_type = "relu"
+
+        elif prev_type == "bn":
+            # If the previous layer was BatchNorm2d but the current layer is not ReLU
+            # Add the current group to layers_to_fuse, reset layer_names and reset
+            # prev_type
+            layers_to_fuse.append(layer_names)
+            layer_names = []
+            prev_type = None
+
+    if layer_names:
+        # If there are any remaining layers in layer_names, add them to
+        # layers_to_fuse
         layers_to_fuse.append(layer_names)
 
-      # Start a new group with the current Conv2d layer and update prev_type
-      layer_names = [name]
-      prev_type = "conv"
-
-    elif isinstance(module, nn.BatchNorm2d) and prev_type == "conv":
-      # If the current layer is BatchNorm2d and the previous layer was Conv2d
-      # Add the current BatchNorm2d layer to the current group and update
-      # prev_type
-      layer_names.append(name)
-      prev_type = "bn"
-
-    elif isinstance(module, nn.ReLU) and prev_type == "bn":
-      # If the current layer is ReLU and the previous layer was BatchNorm2d
-      # Add the current ReLU layer to the current group, add the group to
-      # layers_to_fuse and update prev_type
-      layer_names.append(name)
-      layers_to_fuse.append(layer_names)
-      layer_names = []
-      prev_type = "relu"
-
-    elif prev_type == "bn":
-      # If the previous layer was BatchNorm2d but the current layer is not ReLU
-      # Add the current group to layers_to_fuse, reset layer_names and reset
-      # prev_type
-      layers_to_fuse.append(layer_names)
-      layer_names = []
-      prev_type = None
-
-  if layer_names:
-    # If there are any remaining layers in layer_names, add them to
-    # layers_to_fuse
-    layers_to_fuse.append(layer_names)
-
-  return layers_to_fuse
+    return layers_to_fuse
