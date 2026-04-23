@@ -18,8 +18,7 @@ common_parameters = {
 }
 
 conf = {
-
-# ----------------------- Teacher: MATPAC_MCL ------------------------------------------------------------
+    # ----------------------- Teacher: MATPAC_MCL ------------------------------------------------------------
     "matpac_mcl_train": {
         "dataset": {
             "name": "AudioSet",
@@ -27,17 +26,16 @@ conf = {
             "audio_duration": None,
             "batch_size": 8,
             "shuffle": False,
-            "drop_last": False
+            "drop_last": False,
         },
         "model": {
             "name": "MATPAC_MCL",
             "sr": 16000,
             "pull_time_dimension": True,
             "feature_type": "embed",  # embed, all
-            "ckpt_path": os.path.join("models",
-                                      "teachers",
-                                      "MATPAC_MCL",
-                                      "matpac_plus_6s_2048_enconly.pt"),
+            "ckpt_path": os.path.join(
+                "models", "teachers", "MATPAC_MCL", "matpac_plus_6s_2048_enconly.pt"
+            ),
         },
         "slice_audio": {
             "win_len": 10,
@@ -45,7 +43,6 @@ conf = {
             "add_last": True,
         },
     },
-
     "matpac_mcl_eval": {
         "dataset": {
             "name": "AudioSet",
@@ -53,17 +50,16 @@ conf = {
             "audio_duration": None,
             "batch_size": 8,
             "shuffle": False,
-            "drop_last": False
+            "drop_last": False,
         },
         "model": {
             "name": "MATPAC_MCL",
             "sr": 16000,
             "pull_time_dimension": True,
             "feature_type": "embed",  # embed, all
-            "ckpt_path": os.path.join("models",
-                                      "teachers",
-                                      "MATPAC_MCL",
-                                      "matpac_plus_6s_2048_enconly.pt"),
+            "ckpt_path": os.path.join(
+                "models", "teachers", "MATPAC_MCL", "matpac_plus_6s_2048_enconly.pt"
+            ),
         },
         "slice_audio": {
             "win_len": 10,
@@ -71,8 +67,7 @@ conf = {
             "add_last": True,
         },
     },
-
-# ----------------------- Teacher: M2D ------------------------------------------------------------
+    # ----------------------- Teacher: M2D ------------------------------------------------------------
     "m2d_train": {
         "dataset": {
             "name": "AudioSet",
@@ -80,18 +75,20 @@ conf = {
             "audio_duration": None,
             "batch_size": 4,
             "shuffle": False,
-            "drop_last": False
+            "drop_last": False,
         },
         "model": {
             "name": "M2D",
             "sr": 16000,
             "pull_time_dimension": True,
             "feature_type": "embed",  # embed, all
-            "ckpt_path": os.path.join("models",
-                                      "teachers",
-                                      "M2D",
-                                      "m2d_vit_base-80x608p16x16-221006-mr7_enconly",
-                                      "M2D_ssl.pth"),
+            "ckpt_path": os.path.join(
+                "models",
+                "teachers",
+                "M2D",
+                "m2d_vit_base-80x608p16x16-221006-mr7_enconly",
+                "M2D_ssl.pth",
+            ),
         },
         "slice_audio": {
             "win_len": 10,
@@ -99,7 +96,6 @@ conf = {
             "add_last": True,
         },
     },
-
     "m2d_eval": {
         "dataset": {
             "name": "AudioSet",
@@ -107,18 +103,20 @@ conf = {
             "audio_duration": None,
             "batch_size": 4,
             "shuffle": False,
-            "drop_last": False
+            "drop_last": False,
         },
         "model": {
             "name": "M2D",
             "sr": 16000,
             "pull_time_dimension": True,
             "feature_type": "embed",  # embed, all
-            "ckpt_path": os.path.join("models",
-                                      "teachers",
-                                      "M2D",
-                                      "m2d_vit_base-80x608p16x16-221006-mr7_enconly",
-                                      "M2D_ssl.pth"),
+            "ckpt_path": os.path.join(
+                "models",
+                "teachers",
+                "M2D",
+                "m2d_vit_base-80x608p16x16-221006-mr7_enconly",
+                "M2D_ssl.pth",
+            ),
         },
         "slice_audio": {
             "win_len": 10,
@@ -126,6 +124,4 @@ conf = {
             "add_last": True,
         },
     },
-
-
 }

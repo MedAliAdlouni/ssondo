@@ -8,155 +8,170 @@ from training_ssondo.utils.preprocess import SliceAudio
 
 
 class ModelWrapper(nn.Module):
-  """
-  A wrapper class for different model architectures.
-
-  Parameters
-  ----------
-  conf : dict
-    Configuration dictionary containing model specifications.
-
-  Attributes
-  ----------
-  model : nn.Module
-    The wrapped model instance
-
-  Methods
-  -------
-  forward(feats)
-    Forward pass of the wrapped model.
-  """
-
-  def __init__(self, conf: dict):
-    super().__init__()
-
-    if "MATPAC" in conf["model"]["name"]:
-      self.model = MATPAC(conf=conf)
-
-    elif "M2D" == conf["model"]["name"]:
-      self.model = m2d(conf=conf)
-
-    else:
-      raise NotImplementedError("Model wrapper not implemented yet.")
-
-  def forward(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Forward pass of the wrapped model, it only calls the forward of the model.
+    A wrapper class for different model architectures.
 
     Parameters
     ----------
-    feats: torch.Tensor
-      Input audio tensor of shape (bs, 1, n_samples)
+    conf : dict
+      Configuration dictionary containing model specifications.
 
-    Returns
+    Attributes
+    ----------
+    model : nn.Module
+      The wrapped model instance
+
+    Methods
     -------
-    features: torch.Tensor
-      Features of the audio obtained from the model, with shape
-      (bs, n_slices, features_dim).
-    layer_results: torch.Tensor
-      Output of each intermediate layer of shape (bs, n_layers, n_slices emb_dim)
-      if they exist else same as emb.
+    forward(feats)
+      Forward pass of the wrapped model.
     """
 
-    features, layer_results = self.model(feats)
-    return features, layer_results
+    def __init__(self, conf: dict):
+        super().__init__()
+
+        if "MATPAC" in conf["model"]["name"]:
+            self.model = MATPAC(conf=conf)
+
+        elif "M2D" == conf["model"]["name"]:
+            self.model = M2D(conf=conf)
+
+        else:
+            raise NotImplementedError("Model wrapper not implemented yet.")
+
+    def forward(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Forward pass of the wrapped model, it only calls the forward of the model.
+
+        Parameters
+        ----------
+        feats: torch.Tensor
+          Input audio tensor of shape (bs, 1, n_samples)
+
+        Returns
+        -------
+        features: torch.Tensor
+          Features of the audio obtained from the model, with shape
+          (bs, n_slices, features_dim).
+        layer_results: torch.Tensor
+          Output of each intermediate layer of shape (bs, n_layers, n_slices emb_dim)
+          if they exist else same as emb.
+        """
+
+        features, layer_results = self.model(feats)
+        return features, layer_results
 
 
-class m2d(nn.Module):
-  def __init__(self, conf: dict):
-    super(m2d, self).__init__()
-    from training_ssondo.utils.portable_m2d import PortableM2D
+class M2D(nn.Module):
+    """Wrapper for the M2D (Masked Modeling Duo) teacher model.
 
-    self.model = PortableM2D(
-        conf["model"]["ckpt_path"])
+    Loads a pretrained M2D checkpoint, slices input audio into windows,
+    and extracts embeddings and intermediate layer outputs.
+    """
 
-    self.pull_time_dimension = conf["model"]["pull_time_dimension"]
-    self.target_sr = conf["model"]["sr"]
+    def __init__(self, conf: dict):
+        super().__init__()
+        from training_ssondo.utils.portable_m2d import PortableM2D
 
-    self.max_len = conf["slice_audio"]["win_len"]
-    self.slice_audio = SliceAudio(
-        sr=conf["model"]["sr"],
-        window_length=conf["slice_audio"]["win_len"],
-        step_size=conf["slice_audio"]["step_size"],
-        add_last=conf["slice_audio"]["add_last"])
+        self.model = PortableM2D(conf["model"]["ckpt_path"])
 
-  def forward(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        self.pull_time_dimension = conf["model"]["pull_time_dimension"]
+        self.target_sr = conf["model"]["sr"]
 
-    emb, layer_results = self.forward_ds(feats)
+        self.max_len = conf["slice_audio"]["win_len"]
+        self.slice_audio = SliceAudio(
+            sr=conf["model"]["sr"],
+            window_length=conf["slice_audio"]["win_len"],
+            step_size=conf["slice_audio"]["step_size"],
+            add_last=conf["slice_audio"]["add_last"],
+        )
 
-    return emb, layer_results
+    def forward(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
 
-  def forward_ds(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        emb, layer_results = self.forward_ds(feats)
 
-    if feats.shape[-1] > self.target_sr * self.max_len:
-      feats = self.slice_audio(feats)  # shape (bs, n_slices, n_samples)
+        return emb, layer_results
 
-    bs, n_seg, n_samples = feats.shape
+    def forward_ds(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
 
-    feats = feats.reshape(bs*n_seg, n_samples)
+        if feats.shape[-1] > self.target_sr * self.max_len:
+            feats = self.slice_audio(feats)  # shape (bs, n_slices, n_samples)
 
-    layer_results = self.model(feats)
+        bs, n_seg, n_samples = feats.shape
 
-    _, n_layer, n_emb, emb_dim = layer_results.shape
+        feats = feats.reshape(bs * n_seg, n_samples)
 
-    layer_results = layer_results.reshape(bs, n_seg, n_layer, n_emb, emb_dim)
+        layer_results = self.model(feats)
 
-    layer_results = layer_results.mean(dim=1)
-    if self.pull_time_dimension:
-      layer_results = layer_results.mean(dim=-2)
-    emb = layer_results[:, -1]
+        _, n_layer, n_emb, emb_dim = layer_results.shape
 
-    return emb, layer_results
+        layer_results = layer_results.reshape(bs, n_seg, n_layer, n_emb, emb_dim)
+
+        layer_results = layer_results.mean(dim=1)
+        if self.pull_time_dimension:
+            layer_results = layer_results.mean(dim=-2)
+        emb = layer_results[:, -1]
+
+        return emb, layer_results
 
 
 class MATPAC(nn.Module):
-  def __init__(self, conf: dict):
-    super().__init__()
-    from matpac.model import get_matpac
+    """Wrapper for MATPAC teacher model variants (MATPAC, MATPAC_MCL, MATPAC_CLS_MCL).
 
-    self.model = get_matpac(
-        checkpoint_path=conf["model"]["ckpt_path"],
-        pull_time_dimension=conf["model"]["pull_time_dimension"],
-    )
-    self.pull_time_dimension = conf["model"]["pull_time_dimension"]
-    self.target_sr = conf["model"]["sr"]
+    Loads a pretrained MATPAC checkpoint, slices input audio into windows,
+    and extracts embeddings and intermediate layer outputs.
+    """
 
-    self.max_len = conf["slice_audio"]["win_len"]
-    self.slice_audio = SliceAudio(
-        sr=conf["model"]["sr"],
-        window_length=conf["slice_audio"]["win_len"],
-        step_size=conf["slice_audio"]["step_size"],
-        add_last=conf["slice_audio"]["add_last"])
+    def __init__(self, conf: dict):
+        super().__init__()
+        from matpac.model import get_matpac
 
-  def forward(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    # feats.shape: (bs, 1, n_samples)
-    if feats.shape[-1] > self.target_sr * self.max_len:
-      feats = self.slice_audio(feats)  # shape (bs, n_slices, n_samples)
+        self.model = get_matpac(
+            checkpoint_path=conf["model"]["ckpt_path"],
+            pull_time_dimension=conf["model"]["pull_time_dimension"],
+        )
+        self.pull_time_dimension = conf["model"]["pull_time_dimension"]
+        self.target_sr = conf["model"]["sr"]
 
-    # reshaping feats into (bs * n_slices, n_samples)
-    bs, n_slices, n_samples = feats.shape
-    feats = feats.reshape(bs * n_slices, n_samples)
+        self.max_len = conf["slice_audio"]["win_len"]
+        self.slice_audio = SliceAudio(
+            sr=conf["model"]["sr"],
+            window_length=conf["slice_audio"]["win_len"],
+            step_size=conf["slice_audio"]["step_size"],
+            add_last=conf["slice_audio"]["add_last"],
+        )
 
-    emb, layer_results = self.model(feats)
+    def forward(self, feats: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        # feats.shape: (bs, 1, n_samples)
+        if feats.shape[-1] > self.target_sr * self.max_len:
+            feats = self.slice_audio(feats)  # shape (bs, n_slices, n_samples)
 
-    if self.pull_time_dimension:
-      # reshaping emb
-      _, emb_dim = emb.shape
-      emb = emb.reshape(bs, n_slices, emb_dim)
+        # reshaping feats into (bs * n_slices, n_samples)
+        bs, n_slices, n_samples = feats.shape
+        feats = feats.reshape(bs * n_slices, n_samples)
 
-      # reshaping layer_results
-      _, n_layers, emb_dim = layer_results.shape
-      layer_results = layer_results.reshape(bs, n_slices, n_layers, emb_dim)
-      layer_results = layer_results.transpose(1, 2)  # shape (bs, n_layers, n_slices, emb_dim) # nopep8
+        emb, layer_results = self.model(feats)
 
-    else:
-      # reshaping emb
-      _, t, emb_dim = emb.shape
-      emb = emb.reshape(bs, n_slices, t, emb_dim)
+        if self.pull_time_dimension:
+            # reshaping emb
+            _, emb_dim = emb.shape
+            emb = emb.reshape(bs, n_slices, emb_dim)
 
-      # reshaping layer_results
-      _, n_layers, t, emb_dim = layer_results.shape
-      layer_results = layer_results.reshape(bs, n_slices, n_layers, t, emb_dim)
-      layer_results = layer_results.transpose(1, 2)  # shape (bs, n_layers, n_slices, t, emb_dim) # nopep8
+            # reshaping layer_results
+            _, n_layers, emb_dim = layer_results.shape
+            layer_results = layer_results.reshape(bs, n_slices, n_layers, emb_dim)
+            # (bs, n_slices, n_layers, emb_dim) -> (bs, n_layers, n_slices, emb_dim)
+            layer_results = layer_results.transpose(1, 2)
 
-    return emb, layer_results
+        else:
+            # reshaping emb
+            _, t, emb_dim = emb.shape
+            emb = emb.reshape(bs, n_slices, t, emb_dim)
+
+            # reshaping layer_results
+            _, n_layers, t, emb_dim = layer_results.shape
+            layer_results = layer_results.reshape(bs, n_slices, n_layers, t, emb_dim)
+            # (bs, n_slices, n_layers, t, emb_dim) -> (bs, n_layers, n_slices, t, emb_dim)
+            layer_results = layer_results.transpose(1, 2)
+
+        return emb, layer_results

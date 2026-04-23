@@ -13,9 +13,9 @@ The pipeline processes AudioSet audio files through a Teacher Model (MATPAC or M
 ## Prerequisites
 
 - Python environment with required dependencies (PyTorch, torchaudio, numpy, tqdm, yaml, etc.)
-- AudioSet dataset downloaded and available at `$DATA/AudioSet`
+- AudioSet dataset downloaded and available at `$DATA/AudioSet` (defaults to `training_ssondo/data/AudioSet`)
 - Teacher model checkpoints available (MATPAC, M2D, etc.) in the `models/teachers/` directory
-- Environment variable `DATA` set to your data directory
+- (Optional) Environment variable `DATA` set to your data directory
 
 ## Usage
 
@@ -23,8 +23,8 @@ The pipeline processes AudioSet audio files through a Teacher Model (MATPAC or M
 
 Run this command from the `training_ssondo` directory:
 
-```powershell
-PS D:\new_projects\ssondo\training_ssondo> uv run -m 001_extract_teachers_knowledge.audioset_feature_extraction --conf_id matpac_mcl_eval
+```bash
+uv run -m training_ssondo.extract_teachers_knowledge.audioset_feature_extraction --conf_id matpac_mcl_eval
 ```
 
 ### Available Configurations
@@ -69,7 +69,7 @@ The configuration used for extraction is saved as `{dataset_set}_conf.yml` in th
 ## Directory Structure
 
 ```
-001_extract_teachers_knowledge/
+extract_teachers_knowledge/
 ├── audioset_feature_extraction.py  # Main script for extracting features from AudioSet
 ├── config.py                        # Configuration settings for models and datasets
 ├── dataset.py                       # PyTorch Dataset class for loading AudioSet
@@ -172,8 +172,8 @@ To create a custom configuration, edit `config.py` and add a new entry to the `c
 
 ## Troubleshooting
 
-**Issue: `DATA` environment variable not set**
-- Solution: Set the `DATA` environment variable to your data directory before running
+**Issue: Data not found**
+- Solution: Either set the `DATA` environment variable or ensure data is in `training_ssondo/data/`
 
 **Issue: Model checkpoint not found**
 - Solution: Ensure model checkpoints are in the correct location as specified in `config.py`
