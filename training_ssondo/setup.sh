@@ -85,7 +85,7 @@ echo ""
 echo "[5/6] Downloading teacher model checkpoints..."
 
 # MATPAC
-download "https://github.com/aurianworld/matpac/releases/download/Initial_release/matpac_10_2048.pt" \
+download "https://github.com/aurianworld/matpac/releases/download/MATPAC%2B%2B/matpac_plus_6s_2048_enconly.pt" \
          "$MODELS_DIR/teachers/MATPAC_MCL/matpac_plus_6s_2048_enconly.pt"
 
 # M2D (zip archive)
@@ -129,7 +129,7 @@ echo "  Next step: download AudioSet audio clips (Step 1 of the pipeline):"
 echo ""
 echo "    uv run python -m training_ssondo.download_subset_of_audioset.download_audioset \\"
 echo "        --metadata-csv data/AudioSet/eval_segments.csv \\"
-echo "        --subset-name eval --n-clips 1000"
+echo "        --subset-name eval --n-clips 512"
 echo ""
 echo "  See readme.md for the full pipeline workflow."
 echo "========================================================================"
