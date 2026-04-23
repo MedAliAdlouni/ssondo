@@ -21,6 +21,13 @@ from .utils import (
     is_video_available,
 )
 
+SAMPLE_RATE = 16_000
+AUDIO_CODEC = "pcm_s16le"
+AUDIO_CHANNELS = 1
+
+_PACKAGE_ROOT = Path(__file__).resolve().parent.parent
+_DEFAULT_DATA_DIR = _PACKAGE_ROOT / "data"
+
 
 # ----------------------- Main entry point ---------------------------------------------------------
 def download_subset_of_audioset(
@@ -33,8 +40,9 @@ def download_subset_of_audioset(
 ) -> dict:
     """Download a subset of AudioSet clips from YouTube (keeps trying until it gets enough)."""
     if output_dir is None:
-        output_dir = os.path.join(os.environ["DATA"], "AudioSet")
-    
+        data_root = os.environ.get("DATA", str(_DEFAULT_DATA_DIR))
+        output_dir = os.path.join(data_root, "AudioSet")
+
     df = pd.read_csv(
         metadata_csv,
         skiprows=2,
@@ -74,11 +82,17 @@ def download_audio_segments_parallel(
     lock = threading.Lock()
 
     df = full_df.sample(frac=1, random_state=random_state).reset_index(drop=True)
-    print(f"\nAttempting {n_clips_wanted} clips from {len(df)} rows with {max_workers} workers.\n")
+    print(
+        f"\nAttempting {n_clips_wanted} clips from {len(df)} rows with {max_workers} workers.\n"
+    )
 
     def worker(i: int) -> None:
         row = df.iloc[i]
-        vid, start, end = str(row["file_id"]), float(row["start_seconds"]), float(row["end_seconds"])
+        vid, start, end = (
+            str(row["file_id"]),
+            float(row["start_seconds"]),
+            float(row["end_seconds"]),
+        )
         out = subset_dir / get_subdirectory(vid) / get_output_filename(vid, start, end)
 
         # Check if already exists
@@ -94,7 +108,7 @@ def download_audio_segments_parallel(
         if not is_video_available(vid):
             with lock:
                 stats["skipped_unavailable"] += 1
-            print(f"[{i+1}] skip unavailable {vid}")
+            print(f"[{i + 1}] skip unavailable {vid}")
             return
 
         # Attempt download
@@ -157,15 +171,17 @@ def download_audio_segments_parallel(
     # Print statistics
     scanned = next_i
 
-    print(f"\n{'='*60}\nDOWNLOAD COMPLETE\n{'='*60}")
+    print(f"\n{'=' * 60}\nDOWNLOAD COMPLETE\n{'=' * 60}")
     print(f"Successful downloads: {stats['successful']}/{n_clips_wanted}")
     print(f"Scanned rows: {scanned}/{len(df)}")
     print(f"  - Skipped (unavailable): {stats['skipped_unavailable']}")
     print(f"  - Download attempted: {stats['total_attempted']}")
     print(f"  - Failed: {stats['failed']}")
     if stats["successful"] < n_clips_wanted:
-        print(f"\nWARNING: only got {stats['successful']} of {n_clips_wanted}. Not enough available clips in dataset OR The download was interrupted.")
-    print(f"{'='*60}")
+        print(
+            f"\nWARNING: only got {stats['successful']} of {n_clips_wanted}. Not enough available clips in dataset OR The download was interrupted."
+        )
+    print(f"{'=' * 60}")
 
     return stats
 
@@ -188,14 +204,18 @@ def download_audio_segment(
 
     try:
         # Download video
-        with yt_dlp.YoutubeDL({
-            "format": "bestaudio/best",
-            "outtmpl": str(temp_pattern) + ".%(ext)s",
-            "quiet": True,
-            "no_warnings": True,
-            **YTDLP_OPTS,
-        }) as ydl:
-            ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
+        with yt_dlp.YoutubeDL(
+            {
+                "format": "bestaudio/best",
+                "outtmpl": str(temp_pattern) + ".%(ext)s",
+                "quiet": True,
+                "no_warnings": True,
+                **YTDLP_OPTS,
+            }
+        ) as ydl:
+            ydl.extract_info(
+                f"https://www.youtube.com/watch?v={video_id}", download=True
+            )
 
         # Find downloaded file and extract segment
         matches = sorted(temp_dir.glob(f"{video_id}_temp.*"))
@@ -203,12 +223,27 @@ def download_audio_segment(
             return False
 
         result = subprocess.run(
-            ["ffmpeg", "-loglevel", "error", "-y",
-             "-ss", str(start_time), "-t", str(duration),
-             "-i", str(matches[0]),
-             "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
-             str(outp)],
-            capture_output=True, text=True
+            [
+                "ffmpeg",
+                "-loglevel",
+                "error",
+                "-y",
+                "-ss",
+                str(start_time),
+                "-t",
+                str(duration),
+                "-i",
+                str(matches[0]),
+                "-acodec",
+                AUDIO_CODEC,
+                "-ar",
+                str(SAMPLE_RATE),
+                "-ac",
+                str(AUDIO_CHANNELS),
+                str(outp),
+            ],
+            capture_output=True,
+            text=True,
         )
         return result.returncode == 0 and outp.exists()
     except Exception:
@@ -223,13 +258,30 @@ def download_audio_segment(
 if __name__ == "__main__":
     import argparse
 
-    p = argparse.ArgumentParser(description="Download AudioSet audio clips from YouTube")
+    p = argparse.ArgumentParser(
+        description="Download AudioSet audio clips from YouTube"
+    )
     p.add_argument("--metadata-csv", required=True, help="Path to metadata CSV")
-    p.add_argument("--n-clips", type=int, default=5, help="Number of clips to successfully download")
-    p.add_argument("--subset-name", required=True, help="Output subdirectory name (e.g. 'eval', 'balanced_train', 'unbalanced_train')")
-    p.add_argument("--output-dir", default=os.path.join(os.environ["DATA"], "AudioSet"), help="Output directory for downloaded AudioSet audio files")
-    p.add_argument("--random-state", type=int, default=43, help="Random seed")
-    p.add_argument("--max-workers", type=int, default=5, help="Parallel download workers")
+    p.add_argument(
+        "--n-clips",
+        type=int,
+        default=5,
+        help="Number of clips to successfully download",
+    )
+    p.add_argument(
+        "--subset-name",
+        required=True,
+        help="Output subdirectory name (e.g. 'eval', 'balanced_train', 'unbalanced_train')",
+    )
+    p.add_argument(
+        "--output-dir",
+        default=None,
+        help="Output directory for downloaded AudioSet audio files (default: $DATA/AudioSet or training_ssondo/data/AudioSet)",
+    )
+    p.add_argument("--random-state", type=int, default=42, help="Random seed")
+    p.add_argument(
+        "--max-workers", type=int, default=5, help="Parallel download workers"
+    )
     args = p.parse_args()
 
     stats = download_subset_of_audioset(

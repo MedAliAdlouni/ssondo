@@ -25,13 +25,13 @@ download_subset_of_audioset(
 
 ## Command Line Usage 
 Run this command from the `training_ssondo` directory.
-```powershell
-uv run -m 000_download_subset_of_audioset.download_audioset --metadata-csv <path> --subset-name <name> [--n-clips <num>] [--output-dir <path>] [--max-workers <int>]
+```bash
+uv run -m training_ssondo.download_subset_of_audioset.download_audioset --metadata-csv <path> --subset-name <name> [--n-clips <num>] [--output-dir <path>] [--max-workers <int>]
 ```
 
 **Example:**
-```powershell
-uv run -m 000_download_subset_of_audioset.download_audioset --metadata-csv D:\new_projects\ssondo\training_ssondo\data\AudioSet\eval_segments.csv --subset-name eval --n-clips 10
+```bash
+uv run -m training_ssondo.download_subset_of_audioset.download_audioset --metadata-csv $DATA/AudioSet/eval_segments.csv --subset-name eval --n-clips 10
 ```
 
 ## Output Format
