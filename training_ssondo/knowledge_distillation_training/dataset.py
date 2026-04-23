@@ -7,6 +7,8 @@ import torch
 from torch.utils.data import Dataset
 import torchaudio
 
+from training_ssondo import DATA
+
 
 class AudiosetDatasetKD(Dataset):
   """
@@ -80,7 +82,7 @@ class AudiosetDatasetKD(Dataset):
       cluster_labels = pd.read_csv(self.cluster_labels_path)
 
       # change the path if on JZ
-      if "lustre" in os.environ.get("DATA", ""):
+      if "lustre" in DATA:
         print("yes you are on jz")
         old_path = '/projects/adasp/dcase'
         new_path = '/lustre/fsn1/projects/rech/fkp/ubj85tu'

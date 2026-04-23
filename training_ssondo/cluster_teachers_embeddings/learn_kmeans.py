@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 # Local application/library imports
+from training_ssondo import DATA
 from training_ssondo.utils.audioset_loader import AudioSet
 from .utils import merge_dicts, plot_inertia, save_clustering_results
 from .dataset import TeacherKnowledgeDataset
@@ -35,8 +36,7 @@ def main(conf) -> None:
   print(f"Starting clustering experiment with : {conf['n_clusters']}_clusters")
 
   # Load teacher embeddings
-  root_dir = os.path.join(
-      os.environ["DATA"], "AudioSet")
+  root_dir = os.path.join(DATA, "AudioSet")
   print(f"Loading AudioSet from: {root_dir}")
   audioset_loader = AudioSet(root_dir=root_dir)
 

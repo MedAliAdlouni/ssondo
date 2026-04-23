@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from psutil import virtual_memory
 
 # Local application/library imports
+from training_ssondo import DATA
 from training_ssondo.utils.audioset_loader import AudioSet
 from .config import conf, common_parameters
 from .dataset import TeacherKnowledgeDataset
@@ -33,7 +34,7 @@ def main(conf) -> None:
         kmeans: MiniBatchKMeans = pickle.load(f)
 
     # Load data
-    root_dir = os.path.join(os.environ["DATA"], "AudioSet")
+    root_dir = os.path.join(DATA, "AudioSet")
     print(f"Loading AudioSet from: {root_dir}")
     audioset_loader = AudioSet(root_dir=root_dir)
     print(' TeacherKnowledgeDataset to load "TRAIN" teacher knowledge of AudioSet')

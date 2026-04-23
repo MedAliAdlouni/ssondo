@@ -7,6 +7,8 @@ import os
 import pandas as pd
 from typing import Optional
 
+from training_ssondo import DATA
+
 
 class AudioSet:
     """
@@ -19,13 +21,13 @@ class AudioSet:
         Parameters
         ----------
         root_dir : str, optional
-            Root directory of AudioSet dataset. If None, uses:
-            os.path.join(os.environ['DATA'], 'AudioSet')
+            Root directory of AudioSet dataset. If None, defaults to
+            $DATA/AudioSet (or training_ssondo/data/AudioSet if DATA is unset).
         load_metadata : bool, optional
             Whether to load metadata file immediately, by default True
         """
         if root_dir is None:
-            root_dir = os.path.join(os.environ['DATA'], 'AudioSet')
+            root_dir = os.path.join(DATA, 'AudioSet')
         if not os.path.isdir(root_dir):
             raise ValueError(f"Root directory does not exist: {root_dir}")
         

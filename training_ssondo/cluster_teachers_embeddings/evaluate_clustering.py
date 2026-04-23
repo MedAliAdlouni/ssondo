@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 # Local application/library imports
+from training_ssondo import DATA
 from training_ssondo.utils.audioset_loader import AudioSet
 from .config import conf, common_parameters
 from .dataset import TeacherKnowledgeDataset
@@ -35,7 +36,7 @@ def main(conf) -> None:
     print(f"Loading predicted labels from {df_path}")
     df = pd.read_csv(df_path)
 
-    root_dir = os.path.join(os.environ["DATA"], "AudioSet")
+    root_dir = os.path.join(DATA, "AudioSet")
     audioset_loader = AudioSet(root_dir=root_dir)
     train_dataset = TeacherKnowledgeDataset(
         audioset_loader=audioset_loader,

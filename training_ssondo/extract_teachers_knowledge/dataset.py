@@ -12,7 +12,8 @@ import torch
 import torchaudio
 from torch.utils.data import Dataset
 
-# # Local application/library imports
+# Local imports
+from training_ssondo import DATA
 from training_ssondo.utils.audioset_loader import AudioSet
 
 
@@ -53,7 +54,7 @@ class AudiosetDataset(Dataset):
           audio_duration: Optional[int] = None) -> None:
 
     audioset = AudioSet(
-        root_dir=os.path.join(os.environ["DATA"], "AudioSet")  # nopep8
+        root_dir=os.path.join(DATA, "AudioSet")
     )
 
     pdf = audioset._pdf_metadata.copy(deep=True)
@@ -93,8 +94,8 @@ class AudiosetDataset(Dataset):
 
     # Determine cache file path based on metadata file location
     metadata_file_path = os.path.join(
-        os.environ.get("DATA", ""), 
-        "AudioSet", 
+        DATA,
+        "AudioSet",
         "metadata.csv"
     )
     

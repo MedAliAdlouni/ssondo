@@ -14,6 +14,7 @@ import pandas as pd
 import yt_dlp
 
 # Local imports
+from training_ssondo import DATA
 from .utils import (
     YTDLP_OPTS,
     get_output_filename,
@@ -24,9 +25,6 @@ from .utils import (
 SAMPLE_RATE = 16_000
 AUDIO_CODEC = "pcm_s16le"
 AUDIO_CHANNELS = 1
-
-_PACKAGE_ROOT = Path(__file__).resolve().parent.parent
-_DEFAULT_DATA_DIR = _PACKAGE_ROOT / "data"
 
 
 # ----------------------- Main entry point ---------------------------------------------------------
@@ -40,7 +38,7 @@ def download_subset_of_audioset(
 ) -> dict:
     """Download a subset of AudioSet clips from YouTube (keeps trying until it gets enough)."""
     if output_dir is None:
-        data_root = os.environ.get("DATA", str(_DEFAULT_DATA_DIR))
+        data_root = DATA
         output_dir = os.path.join(data_root, "AudioSet")
 
     df = pd.read_csv(

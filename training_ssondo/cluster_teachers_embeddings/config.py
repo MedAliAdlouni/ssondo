@@ -4,6 +4,8 @@ import os
 import string
 import random
 
+from training_ssondo import DATA, OUTPUTS
+
 slurm = "SLURM_JOB_ID" in os.environ
 
 if slurm:
@@ -15,7 +17,7 @@ else:
 common_parameters = {
     # Experiment directories
     "exp_dir": os.path.join(
-        os.environ["OUTPUTS"],
+        OUTPUTS,
         "clustering",
         "Placeholder_for_teacher_model_name",
     ),
@@ -23,7 +25,7 @@ common_parameters = {
     # Dataset settings
     "dataset": {
         "teacher_knowledge_path": os.path.join(
-            os.environ["DATA"],
+            DATA,
             "teachers_knowledge",
             "MATPAC_MCL",
             "window_length_10s",
@@ -90,7 +92,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "MATPAC_MCL",
                 "window_length_10s",
@@ -101,7 +103,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL",
         ),
@@ -113,7 +115,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "MATPAC_MCL",
                 "window_length_10s",
@@ -124,7 +126,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL",
         ),
@@ -136,7 +138,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "MATPAC_MCL",
                 "window_length_10s",
@@ -147,7 +149,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL",
         ),
@@ -159,7 +161,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "MATPAC_MCL",
                 "window_length_10s",
@@ -170,7 +172,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL",
         ),
@@ -182,7 +184,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "MATPAC_MCL",
                 "window_length_10s",
@@ -193,7 +195,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL",
         ),
@@ -208,7 +210,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "M2D",
                 "window_length_10s",
@@ -219,7 +221,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D",
         ),
@@ -231,7 +233,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "M2D",
                 "window_length_10s",
@@ -242,7 +244,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D",
         ),
@@ -254,7 +256,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "M2D",
                 "window_length_10s",
@@ -265,7 +267,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D",
         ),
@@ -277,7 +279,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "M2D",
                 "window_length_10s",
@@ -288,7 +290,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D",
         ),
@@ -300,7 +302,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path": os.path.join(
-                os.environ["DATA"],
+                DATA,
                 "teachers_knowledge",
                 "M2D",
                 "window_length_10s",
@@ -311,7 +313,7 @@ conf = {
         },
 
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D",
         ),

@@ -2,7 +2,7 @@
 
 import os
 
-# slurm = "SLURM_JOB_ID" in os.environ
+from training_ssondo import DATA
 
 common_parameters = {
     "process": {
@@ -12,7 +12,7 @@ common_parameters = {
         "pin_memory": False,
     },
     "save_dir": os.path.join(
-        os.environ["DATA"],
+        DATA,
         "teachers_knowledge",
     ),
 }

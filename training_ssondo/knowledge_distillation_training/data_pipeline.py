@@ -16,6 +16,7 @@ from .utils import (
 from .dataset import AudiosetDatasetKD
 from .data_augmentation import Normalize
 
+from training_ssondo import DATA
 from training_ssondo.utils.audioset_loader import AudioSet
 from training_ssondo.utils.preprocess import LogMelSpectrogram, SliceAudio
 
@@ -74,7 +75,7 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
         raise ValueError(f"Dataset {conf['dataset']['name']} is not supported")
 
     # Set up AudioSet paths
-    root_dir = os.path.join(os.environ["DATA"], "AudioSet")
+    root_dir = os.path.join(DATA, "AudioSet")
     audioset_loader = AudioSet(root_dir=root_dir)
     
     cls_dir = os.path.join(

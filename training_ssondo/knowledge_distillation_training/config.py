@@ -5,6 +5,8 @@ import os
 import string
 import random
 
+from training_ssondo import DATA, OUTPUTS
+
 slurm = "SLURM_JOB_ID" in os.environ
 
 if slurm:
@@ -15,13 +17,13 @@ else:
 
 common_parameters = {
     "exp_dir": os.path.join(
-        os.environ["OUTPUTS"],
+        OUTPUTS,
         "knowledge_distillation",
         "Placeholder_for_teacher_model_name"
         "Placeholder_for_student_model_name"),
 
     "cluster_dir": os.path.join(
-        os.environ["OUTPUTS"],
+        OUTPUTS,
         "clustering"),
 
     "process": {
@@ -115,7 +117,7 @@ conf = {
 # ----------- baseline, Supervised Learning, no Knowledge Distillation ----------------------------------------------------------
     "baseline_mn_weighted_random_sampling": {
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "baseline",
             "MobileNetV3"),
@@ -198,7 +200,7 @@ conf = {
 # --------------------------- Student model : MobileNetV3 ---------------------------------------------------------
     "matpac_mn_cosine_random": {
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "MATPAC_MCL",
             "MobileNetV3"),
@@ -231,7 +233,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "MATPAC_MCL",
                              "window_length_10s",
@@ -277,7 +279,7 @@ conf = {
 
     "matpac_mn_cosine_50c": {  # USING CLUSTERS FROM MATPAC MOBILENET
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "MATPAC_MCL",
             "MobileNetV3"),
@@ -294,7 +296,7 @@ conf = {
         },
 
         "cluster_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL"),
 
@@ -315,7 +317,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "MATPAC_MCL",
                              "window_length_10s",
@@ -367,7 +369,7 @@ conf = {
 # --------------------------- Student model : ERes2Net ----------------------------------------------------------
     "matpac_eres2net_cosine_50c": {  # USING CLUSTERS FROM MATPAC MOBILENET
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "MATPAC_MCL",
             "ERes2Net"),
@@ -384,7 +386,7 @@ conf = {
         },
 
         "cluster_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL"),
 
@@ -405,7 +407,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "MATPAC_MCL",
                              "window_length_10s",
@@ -451,7 +453,7 @@ conf = {
 # --------------------------- Student model : DyMN ----------------------------------------------------------
     "matpac_dymn_cosine_50c": {  # USING CLUSTERS FROM MATPAC MOBILENET
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "MATPAC_MCL",
             "DyMN"),
@@ -468,7 +470,7 @@ conf = {
         },
 
         "cluster_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "MATPAC_MCL"),
 
@@ -489,7 +491,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "MATPAC_MCL",
                              "window_length_10s",
@@ -536,7 +538,7 @@ conf = {
 # --------------------------- Student model : MobileNetV3 ----------------------------------------------------------
     "m2d_mn_cosine_50c": {
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "M2D",
             "MobileNetV3"),
@@ -569,7 +571,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "M2D",
                              "window_length_10s",
@@ -621,7 +623,7 @@ conf = {
 # --------------------------- Student model : ERes2Net ----------------------------------------------------------
     "m2d_eres2net_cosine_50c": {
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "M2D",
             "ERes2Net"),
@@ -638,7 +640,7 @@ conf = {
         },
 
         "cluster_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D"),
 
@@ -659,7 +661,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "M2D",
                              "window_length_10s",
@@ -705,7 +707,7 @@ conf = {
 # --------------------------- Student model : DyMN ----------------------------------------------------------
     "m2d_dymn_cosine_50c": {
         "exp_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "knowledge_distillation",
             "M2D",
             "DyMN"),
@@ -722,7 +724,7 @@ conf = {
         },
 
         "cluster_dir": os.path.join(
-            os.environ["OUTPUTS"],
+            OUTPUTS,
             "clustering",
             "M2D"),
 
@@ -743,7 +745,7 @@ conf = {
 
         "dataset": {
             "teacher_knowledge_path":
-                os.path.join(os.environ["DATA"],
+                os.path.join(DATA,
                              "teachers_knowledge",
                              "M2D",
                              "window_length_10s",
