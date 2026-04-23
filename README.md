@@ -26,11 +26,25 @@ S-SONDO is the first framework for **self-supervised knowledge distillation** of
 
 ## Key Results
 
-| Student Model | Teacher | Params | Compression | ESC-50 (linear probe) |
-|:---:|:---:|:---:|:---:|:---:|
-| MobileNetV3 | MATPAC++ | 2.9M | 61x | **88.3%** |
-| DyMN | MATPAC++ | — | — | coming soon |
-| ERes2Net | MATPAC++ | — | — | coming soon |
+Downstream evaluation across **7 audio tasks** (4 music + 3 environmental sound). Students retain up to **96.4%** of teacher performance while being up to **61x smaller**.
+
+<div align="center">
+<img src="assets/paper_figures/downstream_evaluation.png" width="800" alt="Downstream Evaluation Results">
+
+*Table 1 from the paper. Bold = best per student. Green = % of teacher performance retained.*
+</div>
+
+### Loss Function Comparison
+
+<div align="center">
+<img src="assets/paper_figures/loss_comparison.png" width="400" alt="Loss Comparison">
+</div>
+
+### Balanced Data Sampling (BDS) Ablation
+
+<div align="center">
+<img src="assets/paper_figures/bds_cluster_ablation.png" width="500" alt="BDS Cluster Ablation">
+</div>
 
 ## Quick Start — Inference
 
