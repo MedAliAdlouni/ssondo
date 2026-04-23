@@ -1,7 +1,8 @@
-""" Evaluate and visualize clustering for teacher model embeddings.
-    This module computes clustering metrics (inertia, silhouette score, etc.),
-    and saves t-SNE and UMAP visualization data for the clustered teacher embeddings.
+"""Evaluate and visualize clustering for teacher model embeddings.
+This module computes clustering metrics (inertia, silhouette score, etc.),
+and saves t-SNE and UMAP visualization data for the clustered teacher embeddings.
 """
+
 # Standard library imports
 import os
 import random
@@ -18,7 +19,7 @@ from training_ssondo.utils.audioset_loader import AudioSet
 from .config import conf, common_parameters
 from .dataset import TeacherKnowledgeDataset
 from .utils import (
-    merge_dicts, 
+    merge_dicts,
     save_clustering_metrics,
     save_tsne_data,
     save_umap_data,
@@ -50,9 +51,12 @@ def main(conf) -> None:
     print("\nCLUSTERING METRICS")
     print("=" * 40)
     print(f"Inertia: {metrics.get('inertia', 'N/A')}")
-    metrics['silhouette_score'] is not None and print(f"Silhouette Score: {metrics['silhouette_score']:.4f}")
-    metrics['calinski_harabasz_score'] is not None and print(f"Calinski-Harabasz Score: {metrics['calinski_harabasz_score']:.4f}")
-    metrics['davies_bouldin_score'] is not None and print(f"Davies-Bouldin Score: {metrics['davies_bouldin_score']:.4f}")
+    if metrics.get("silhouette_score") is not None:
+        print(f"Silhouette Score: {metrics['silhouette_score']:.4f}")
+    if metrics.get("calinski_harabasz_score") is not None:
+        print(f"Calinski-Harabasz Score: {metrics['calinski_harabasz_score']:.4f}")
+    if metrics.get("davies_bouldin_score") is not None:
+        print(f"Davies-Bouldin Score: {metrics['davies_bouldin_score']:.4f}")
 
     save_clustering_metrics(conf, metrics)
     save_tsne_data(train_dataset, df, conf)
@@ -60,8 +64,10 @@ def main(conf) -> None:
 
     print("Evaluation completed successfully!")
 
+
 if __name__ == "__main__":
     import warnings
+
     warnings.filterwarnings("ignore")
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf_id", required=True, help="Conf tag")

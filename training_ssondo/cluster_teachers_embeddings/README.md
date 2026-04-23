@@ -23,7 +23,7 @@ The pipeline takes teacher embeddings extracted from AudioSet (via the `extract_
 - Python environment with required dependencies (PyTorch, scikit-learn, numpy, pandas, tqdm, matplotlib, umap-learn, etc.)
 - Teacher knowledge embeddings extracted and available at `$DATA/teachers_knowledge/{model_name}/window_length_{win_len}s/embed/`
 - AudioSet dataset metadata available at `$DATA/AudioSet`
-- Environment variables `DATA` and `OUTPUTS` set to your data and output directories
+- (Optional) Environment variables `DATA` and `OUTPUTS` (default to `training_ssondo/data/` and `training_ssondo/outputs/`)
 
 ## Directory Structure
 
@@ -74,8 +74,8 @@ Run the pipeline from the `training_ssondo` directory:
 
 Train a MiniBatchKMeans model on teacher embeddings:
 
-```powershell
-PS D:\new_projects\ssondo\training_ssondo> uv run -m cluster_teachers_embeddings.learn_kmeans --conf_id 50_clusters_fit_matpac
+```bash
+uv run -m training_ssondo.cluster_teachers_embeddings.learn_kmeans --conf_id 50_clusters_fit_matpac
 ```
 
 This will:
@@ -88,8 +88,8 @@ This will:
 
 Assign cluster labels to all embeddings:
 
-```powershell
-PS D:\new_projects\ssondo\training_ssondo> uv run -m cluster_teachers_embeddings.label_prediction --conf_id 50_clusters_fit_matpac
+```bash
+uv run -m training_ssondo.cluster_teachers_embeddings.label_prediction --conf_id 50_clusters_fit_matpac
 ```
 
 This will:
@@ -101,8 +101,8 @@ This will:
 
 Compute clustering metrics and generate visualization data:
 
-```powershell
-PS D:\new_projects\ssondo\training_ssondo> uv run -m cluster_teachers_embeddings.evaluate_clustering --conf_id 50_clusters_fit_matpac
+```bash
+uv run -m training_ssondo.cluster_teachers_embeddings.evaluate_clustering --conf_id 50_clusters_fit_matpac
 ```
 
 This will:
@@ -142,21 +142,13 @@ To create a custom configuration, edit `config.py` and add a new entry to the `c
     
     "dataset": {
         "teacher_knowledge_path": os.path.join(
-            os.environ["DATA"],
-            "teachers_knowledge",
-            "MODEL_NAME",
-            "window_length_10s",
-            "embed",
+            DATA, "teachers_knowledge", "MODEL_NAME", "window_length_10s", "embed",
         ),
         "subset": "all",  # "train", "eval", or "all"
         "sample_size": 1,  # Fraction of dataset used if using fit()
     },
     
-    "exp_dir": os.path.join(
-        os.environ["OUTPUTS"],
-        "clustering",
-        "MODEL_NAME",
-    ),
+    "exp_dir": os.path.join(OUTPUTS, "clustering", "MODEL_NAME"),
     
     # Clustering parameters (inherited from common_parameters)
     "init_method": "k-means++",
@@ -178,8 +170,8 @@ To create a custom configuration, edit `config.py` and add a new entry to the `c
 
 ## Troubleshooting
 
-**Issue: `DATA` or `OUTPUTS` environment variable not set**
-- Solution: Set the `DATA` and `OUTPUTS` environment variables to your data and output directories before running
+**Issue: Data or output directories not found**
+- Solution: Either set the `DATA` and `OUTPUTS` environment variables, or ensure data is in `training_ssondo/data/` and outputs in `training_ssondo/outputs/`
 
 **Issue: Teacher knowledge files not found**
 - Solution: Verify that teacher embeddings have been extracted using the `extract_teachers_knowledge` module and are available at the configured path
