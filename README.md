@@ -1,42 +1,164 @@
-# SSONDO: S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models
+<div align="center">
 
-This repository contains the code for training and inference of SSONDO models - small distilled audio representation models.
+# S-SONDO
+
+### Self-Supervised Knowledge Distillation for General Audio Foundation Models
+
+**ICASSP 2026**
+
+[![Paper](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/)
+[![PyPI](https://img.shields.io/pypi/v/ssondo.svg)](https://pypi.org/project/ssondo/)
+[![HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-yellow)](https://huggingface.co/mohammedali2501/ssondo)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-blue.svg)](https://python.org)
+
+[Paper](https://arxiv.org/) | [Models](https://huggingface.co/mohammedali2501/ssondo) | [PyPI Package](https://pypi.org/project/ssondo/) | [Training Code](#training) | [Notebooks](#notebooks)
+
+</div>
+
+---
+
+S-SONDO is the first framework for **self-supervised knowledge distillation** of general audio foundation models. It distills large teacher models into lightweight students that are **up to 61x smaller** while retaining **up to 96% of teacher performance** — using only output embeddings, no logits or layer-level alignment required.
+
+<div align="center">
+<img src="training_ssondo/assets/figure_ssondo_architecture.png" width="700" alt="S-SONDO Architecture">
+</div>
+
+## Key Results
+
+| Student Model | Teacher | Params | Compression | ESC-50 (linear probe) |
+|:---:|:---:|:---:|:---:|:---:|
+| MobileNetV3 | MATPAC++ | 2.9M | 61x | **88.3%** |
+| DyMN | MATPAC++ | — | — | coming soon |
+| ERes2Net | MATPAC++ | — | — | coming soon |
+
+## Quick Start — Inference
+
+```bash
+pip install ssondo
+```
+
+```python
+from ssondo import get_ssondo
+
+# Load model (auto-downloads from Hugging Face Hub)
+model = get_ssondo("matpac-mobilenetv3")
+
+# Extract embeddings from audio
+embeddings = model(audio)  # (batch, n_segments, 960)
+```
+
+### Finetuning (Linear Probe)
+
+```python
+model = get_ssondo("matpac-mobilenetv3")
+model.freeze_backbone()
+
+head = torch.nn.Linear(model.embedding_dim, num_classes)  # 960 -> your classes
+emb = model.get_embeddings(audio)  # (batch, 960)
+logits = head(emb)
+```
+
+### Available Models
+
+```python
+from ssondo import list_models
+for name, desc in list_models().items():
+    print(f"{name}: {desc}")
+```
+
+| Model | Teacher | Student | Status |
+|:---:|:---:|:---:|:---:|
+| `matpac-mobilenetv3` | MATPAC++ | MobileNetV3 | ✅ |
+| `matpac-dymn` | MATPAC++ | DyMN | 🔜 |
+| `matpac-eres2net` | MATPAC++ | ERes2Net | 🔜 |
+| `m2d-mobilenetv3` | M2D | MobileNetV3 | 🔜 |
+| `m2d-dymn` | M2D | DyMN | 🔜 |
+| `m2d-eres2net` | M2D | ERes2Net | 🔜 |
+
+## Training
+
+Full 4-step training pipeline: download data → extract teacher embeddings → cluster → distill.
+
+```bash
+cd training_ssondo
+./setup.sh          # install deps, download metadata + model checkpoints
+./run_pipeline.sh   # run all 4 steps end-to-end
+```
+
+See [training_ssondo/readme.md](training_ssondo/readme.md) for the full pipeline documentation.
+
+### Pipeline Overview
+
+| Step | Module | Description |
+|:---:|--------|-------------|
+| 1 | `download_subset_of_audioset/` | Download AudioSet audio clips from YouTube |
+| 2 | `extract_teachers_knowledge/` | Extract embeddings from teacher models (MATPAC, M2D) |
+| 3 | `cluster_teachers_embeddings/` | Cluster embeddings for balanced data sampling |
+| 4 | `knowledge_distillation_training/` | Train student models via knowledge distillation |
+
+### Teacher Models
+
+| Model | Source | Checkpoint |
+|-------|--------|------------|
+| MATPAC++ | [aurianworld/matpac](https://github.com/aurianworld/matpac) | `matpac_plus_6s_2048_enconly.pt` |
+| M2D | [nttcslab/m2d](https://github.com/nttcslab/m2d) | `m2d_vit_base-80x608p16x16-221006-mr7` |
+
+### Student Models
+
+| Model | Source | Params |
+|-------|--------|--------|
+| MobileNetV3 | [fschmid56/EfficientAT](https://github.com/fschmid56/EfficientAT) | 2.9M |
+| DyMN | [fschmid56/EfficientAT](https://github.com/fschmid56/EfficientAT) | — |
+| ERes2Net | — | — |
+
+## Notebooks
+
+| Notebook | Description |
+|----------|-------------|
+| [Clustering Evaluation](notebooks/ssondo_clustering_evaluation.ipynb) | t-SNE, UMAP, KMeans clustering metrics on ESC-50 |
+| [Linear Probe / Finetuning](notebooks/ssondo_linear_probe_esc50.ipynb) | Frozen backbone + linear head, or full finetuning on ESC-50 |
 
 ## Repository Structure
 
-- **`training_ssondo/`**: Contains all code and dependencies for training the models
-  - Uses `uv` for dependency management
-  - Includes scripts for extracting teacher knowledge, training, and evaluation
-  
-- **`inference_ssondo/`**: A pip-installable package for using the trained distilled models
-  - Can be installed with `pip install -e inference_ssondo/`
-  - Provides easy-to-use APIs for inference
-
-- **`assets/`**: Contains figures and visualizations from the paper
-
-## Setup
-
-### Training Environment
-
-1. Navigate to the training directory:
-   ```bash
-   cd training_ssondo
-   ```
-
-2. Install dependencies using `uv`:
-   ```bash
-   uv sync
-   ```
-
-3. Set up environment variables (see `training_ssondo/README.md` for details)
-
-### Inference Package
-
-Install the inference package:
-```bash
-pip install -e inference_ssondo/
+```
+ssondo/
+├── README.md
+├── LICENSE
+├── CITATION.cff
+├── training_ssondo/          # Training pipeline (4 steps)
+│   ├── setup.sh              # One-command setup
+│   ├── run_pipeline.sh       # End-to-end demo
+│   └── ...
+├── inference_ssondo/         # pip install ssondo
+│   ├── ssondo/               # PyPI package source
+│   └── ...
+├── notebooks/                # Evaluation notebooks
+│   ├── ssondo_clustering_evaluation.ipynb
+│   └── ssondo_linear_probe_esc50.ipynb
+└── assets/
 ```
 
-## Usage
+## Citation
 
-See the README files in each subdirectory for detailed usage instructions.
+If you use S-SONDO in your research, please cite:
+
+```bibtex
+@inproceedings{eladlouni2026ssondo,
+  title={S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models},
+  author={El Adlouni, Mohammed Ali and Quelennec, Aurian and Chouteau, Pierre and Peeters, Geoffroy and Essid, Slim},
+  booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+  year={2026}
+}
+```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- [MATPAC](https://github.com/aurianworld/matpac) — Teacher model
+- [M2D](https://github.com/nttcslab/m2d) — Teacher model
+- [EfficientAT](https://github.com/fschmid56/EfficientAT) — Student architectures (MobileNetV3, DyMN)
+- [AudioSet](https://research.google.com/audioset/) — Training data
