@@ -13,23 +13,39 @@ The pipeline implements a four-step knowledge distillation workflow:
 3. **Cluster Embeddings** - Clusters teacher embeddings for structured knowledge representation
 4. **Train Student Models** - Trains lightweight models (MobileNetV3, ERes2Net, DyMN) to match teacher embeddings
 
+## Quick Start
+
+```bash
+cd training_ssondo
+./setup.sh
+```
+
+This single script installs dependencies, downloads AudioSet metadata, teacher/student model checkpoints, and generates the metadata index. After setup, proceed to [Pipeline Workflow](#pipeline-workflow).
+
 ## Installation
 
 ### Prerequisites
 
 - Python >= 3.10
-- [uv](https://github.com/astral-sh/uv) package manager
+- [uv](https://github.com/astral-sh/uv) package manager (installed automatically by `setup.sh` if missing)
 
-### Setup
+### Automated Setup (Recommended)
 
-1. **Install dependencies:**
 ```bash
-cd training_ssondo
-pip install uv  # if not installed
-uv sync
+./setup.sh
 ```
 
-2. **(Optional) Set environment variables:**
+The script performs these steps:
+1. Checks/installs `uv`
+2. Installs Python dependencies (`uv sync`)
+3. Downloads AudioSet metadata CSVs from Google (~100MB)
+4. Generates the unified `metadata.csv` index
+5. Downloads teacher model checkpoints (~652MB)
+6. Downloads student model checkpoints (~60MB)
+
+The script is idempotent — running it again skips already-downloaded files.
+
+### Environment Variables (Optional)
 
 By default, `DATA` points to `training_ssondo/data/` and `OUTPUTS` points to `training_ssondo/outputs/`. Override them if your data lives elsewhere:
 
@@ -38,24 +54,36 @@ export DATA=/path/to/your/data
 export OUTPUTS=/path/to/your/outputs
 ```
 
-3. **Download required files:**
+### Manual Setup
 
-**Teacher Models** Download, extract zip file and place in `models/teachers/` (relative to project root):
-- [MATPAC](https://github.com/aurianworld/matpac/releases/download/Initial_release/matpac_10_2048.pt) - `matpac_10_2048.pt`
-- [M2D](https://github.com/nttcslab/m2d/releases/download/v0.1.0/m2d_vit_base-80x608p16x16-221006-mr7_enconly.zip) - `M2D_ssl.pth`
+If you prefer to set up manually instead of using `setup.sh`:
 
-**Student Models** (place in `models/students/`):
-- [MobileNetV3](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/mn10_im.pt) - `mn10_im.pt` (pretrained on ImageNet)
-- [DyMN](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/dymn10_im.pt) - `dymn10_im.pt` (pretrained on ImageNet)
-- ERes2Net - No pretrained weights (starts with random initialization)
+1. **Install dependencies:**
+```bash
+pip install uv
+uv sync
+```
 
-**AudioSet Metadata** Download and place in `data/AudioSet/`:
-- [eval_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/eval_segments.csv)
-- [balanced_train_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/balanced_train_segments.csv)
-- [unbalanced_train_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/unbalanced_train_segments.csv)
-- [ontology.json](https://github.com/audioset/ontology/blob/master/ontology.json)
-- [class_labels_indices.csv](https://github.com/audioset/ontology/blob/master/class_labels_indices.csv)
-- [metadata.csv](https://github.com/audioset/metadata/blob/master/metadata.csv)
+2. **Download AudioSet metadata** into `data/AudioSet/`:
+   - [eval_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/eval_segments.csv)
+   - [balanced_train_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/balanced_train_segments.csv)
+   - [unbalanced_train_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/unbalanced_train_segments.csv)
+   - [ontology.json](https://raw.githubusercontent.com/audioset/ontology/refs/heads/master/ontology.json)
+   - [class_labels_indices.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/class_labels_indices.csv)
+
+3. **Generate metadata.csv:**
+```bash
+uv run python scripts/generate_metadata.py
+```
+
+4. **Download teacher models** into `models/teachers/`:
+   - [MATPAC](https://github.com/aurianworld/matpac/releases/download/Initial_release/matpac_10_2048.pt) → `MATPAC_MCL/matpac_plus_6s_2048_enconly.pt`
+   - [M2D](https://github.com/nttcslab/m2d/releases/download/v0.1.0/m2d_vit_base-80x608p16x16-221006-mr7_enconly.zip) → extract to `M2D/`
+
+5. **Download student models** into `models/students/`:
+   - [MobileNetV3](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/mn10_im.pt) → `MobileNetV3/pretrained_models/mn10_im.pt`
+   - [DyMN](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/dymn10_im.pt) → `DyMN/dymn10_im.pt`
+   - ERes2Net — no pretrained weights (random initialization)
 
 ## Data Format
 
