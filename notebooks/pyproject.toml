@@ -1,15 +1,10 @@
 [project]
 name = "ssondo-notebooks"
 version = "0.1.0"
-description = "Notebooks for SSONDO evaluation"
-requires-python = "==3.12.*"
+description = "Notebooks for S-SONDO evaluation"
+requires-python = ">=3.10"
 dependencies = [
-    "numpy>=1.26.3",
-    "einops==0.7.0",
-    "timm",
-    "torch==2.4.1",
-    "torchaudio==2.4.1",
-    "torchvision==0.19.1",
+    "ssondo>=0.1.0",
     "soundfile>=0.12.1",
     "librosa>=0.11.0",
     "datasets>=3.0,<4.0",
@@ -18,11 +13,7 @@ dependencies = [
     "tqdm>=4.66",
     "umap-learn>=0.5",
     "ipykernel>=6.29",
-    "ssondo",
 ]
-
-[tool.uv.sources.ssondo]
-path = "../inference_ssondo"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

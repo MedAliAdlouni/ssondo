@@ -1,17 +1,15 @@
-"""SSONDO Embedding Quality Evaluation
+"""S-SONDO Embedding Quality Evaluation
 
 Downloads ESC-50 (2000 environmental sounds, 50 classes) from HuggingFace,
-extracts embeddings with the SSONDO inference package, clusters them,
-and evaluates whether clusters align with ground-truth labels.
+extracts embeddings with the S-SONDO inference package (pip install ssondo),
+clusters them, and evaluates whether clusters align with ground-truth labels.
 """
 
 import os
-import sys
 
 import numpy as np
 import pandas as pd
 import torch
-import torchaudio
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -27,19 +25,17 @@ from sklearn.metrics import (
 )
 from tqdm.auto import tqdm
 
+from ssondo import get_ssondo
+
 try:
     import umap
     HAS_UMAP = True
 except ImportError:
     HAS_UMAP = False
 
-# Add inference_ssondo to path if not installed
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'inference_ssondo'))
-from ssondo.model import get_ssondo
-
 SEED = 42
 TARGET_SR = 32000
-CKPT_PATH = os.path.join(os.path.dirname(__file__), '..', 'inference_ssondo', 'models', 'matpac++_mobilenetv3_last.ckpt')
+MODEL_NAME = "matpac-mobilenetv3"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'outputs')
 
 
@@ -52,14 +48,13 @@ def main():
     print(f'Device: {DEVICE}')
 
     # ------------------------------------------------------------------
-    # 1. Load SSONDO Model
+    # 1. Load S-SONDO Model (auto-downloads from Hugging Face Hub)
     # ------------------------------------------------------------------
     print('\n' + '=' * 60)
-    print('1. Loading SSONDO model...')
+    print('1. Loading S-SONDO model...')
     print('=' * 60)
-    assert os.path.exists(CKPT_PATH), f'Checkpoint not found at {CKPT_PATH}'
-    model = get_ssondo(CKPT_PATH, device=DEVICE)
-    print(f'Model loaded (emb_size={model.student_model.model.emb_size})')
+    model = get_ssondo(MODEL_NAME, device=DEVICE)
+    print(f'Model loaded: {MODEL_NAME} (emb_size={model.student_model.model.emb_size})')
 
     # ------------------------------------------------------------------
     # 2. Load ESC-50 Dataset
@@ -68,15 +63,12 @@ def main():
     print('2. Loading ESC-50 dataset...')
     print('=' * 60)
     ds = load_dataset('ashraq/esc50', split='train')
-    # Cast audio to soundfile backend at target sample rate
     ds = ds.cast_column('audio', Audio(sampling_rate=TARGET_SR))
     print(f'ESC-50: {len(ds)} samples')
-    print(f'Columns: {ds.column_names}')
 
     class_names = sorted(set(ds['category']))
     print(f'Number of classes: {len(class_names)}')
 
-    # Show a few examples
     for i in range(3):
         sample = ds[i]
         audio = sample['audio']
@@ -99,22 +91,18 @@ def main():
         audio = sample['audio']
         waveform = torch.tensor(audio['array'], dtype=torch.float32)
 
-        # Ensure mono
         if waveform.ndim > 1:
             waveform = waveform.mean(dim=0)
 
-        # Pad to at least 10s (SliceAudio window) if audio is shorter
         min_samples = TARGET_SR * 10
         if waveform.shape[0] < min_samples:
             waveform = torch.nn.functional.pad(waveform, (0, min_samples - waveform.shape[0]))
 
-        # Shape: (1, n_samples)
         waveform = waveform.unsqueeze(0).to(DEVICE)
 
         with torch.no_grad():
-            emb = model(waveform)  # (1, n_segments, 960)
+            emb = model(waveform)
 
-        # Mean-pool over segments -> (960,)
         emb = emb.mean(dim=1).squeeze(0).cpu().numpy()
 
         all_embeddings.append(emb)
@@ -140,16 +128,15 @@ def main():
     fig, ax = plt.subplots(1, 1, figsize=(14, 10))
     scatter = ax.scatter(emb_2d[:, 0], emb_2d[:, 1],
                          c=labels, cmap='tab20', s=8, alpha=0.7)
-    ax.set_title('SSONDO Embeddings - t-SNE (colored by ESC-50 class)', fontsize=14)
+    ax.set_title('S-SONDO Embeddings - t-SNE (colored by ESC-50 class)', fontsize=14)
     ax.set_xlabel('t-SNE 1')
     ax.set_ylabel('t-SNE 2')
     plt.colorbar(scatter, label='Class ID')
     plt.tight_layout()
     plt.savefig(os.path.join(OUTPUT_DIR, 'tsne_by_class.png'), dpi=150)
-    print(f'  Saved tsne_by_class.png')
+    print('  Saved tsne_by_class.png')
     plt.close()
 
-    # UMAP
     if HAS_UMAP:
         print('Running UMAP...')
         reducer = umap.UMAP(n_components=2, random_state=SEED, n_neighbors=15, min_dist=0.1)
@@ -158,13 +145,13 @@ def main():
         fig, ax = plt.subplots(1, 1, figsize=(14, 10))
         scatter = ax.scatter(emb_umap[:, 0], emb_umap[:, 1],
                              c=labels, cmap='tab20', s=8, alpha=0.7)
-        ax.set_title('SSONDO Embeddings - UMAP (colored by ESC-50 class)', fontsize=14)
+        ax.set_title('S-SONDO Embeddings - UMAP (colored by ESC-50 class)', fontsize=14)
         ax.set_xlabel('UMAP 1')
         ax.set_ylabel('UMAP 2')
         plt.colorbar(scatter, label='Class ID')
         plt.tight_layout()
         plt.savefig(os.path.join(OUTPUT_DIR, 'umap_by_class.png'), dpi=150)
-        print(f'  Saved umap_by_class.png')
+        print('  Saved umap_by_class.png')
         plt.close()
 
     # ------------------------------------------------------------------
@@ -233,7 +220,6 @@ def main():
     print('Top 15 purest clusters:')
     print(df_clusters.head(15).to_string(index=False))
 
-    # Purity histogram
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.hist(df_clusters['Purity'], bins=20, edgecolor='black', alpha=0.7)
     ax.axvline(overall_purity, color='red', linestyle='--', label=f'Overall purity: {overall_purity:.3f}')
@@ -273,7 +259,6 @@ def main():
         count = (major_labels == name).sum()
         print(f'  {name}: {count} samples')
 
-    # t-SNE colored by major category
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
     cmap = plt.cm.Set1
     for i, name in enumerate(major_names_ordered):
@@ -281,7 +266,7 @@ def main():
         ax.scatter(emb_2d[mask, 0], emb_2d[mask, 1],
                    c=[cmap(i)] * mask.sum(), s=12, alpha=0.7, label=name)
 
-    ax.set_title('SSONDO Embeddings - t-SNE (colored by ESC-50 major category)', fontsize=14)
+    ax.set_title('S-SONDO Embeddings - t-SNE (colored by ESC-50 major category)', fontsize=14)
     ax.set_xlabel('t-SNE 1')
     ax.set_ylabel('t-SNE 2')
     ax.legend(loc='best', fontsize=9, markerscale=3)
@@ -290,7 +275,6 @@ def main():
     print(f'  Saved tsne_by_major_category.png')
     plt.close()
 
-    # KMeans k=5
     colors_major = {name: i for i, name in enumerate(major_names_ordered)}
     major_label_ids = np.array([colors_major[m] for m in major_labels])
 
@@ -309,9 +293,9 @@ def main():
     # 9. Summary
     # ------------------------------------------------------------------
     print('\n' + '=' * 60)
-    print('SSONDO EMBEDDING QUALITY EVALUATION - SUMMARY')
+    print('S-SONDO EMBEDDING QUALITY EVALUATION - SUMMARY')
     print('=' * 60)
-    print(f'Model:   MATPAC++ -> MobileNetV3 (distilled)')
+    print(f'Model:   {MODEL_NAME} (auto-downloaded from Hugging Face Hub)')
     print(f'Dataset: ESC-50 ({len(ds)} samples, 50 classes)')
     print(f'Embedding dim: {embeddings.shape[1]}')
     print()
