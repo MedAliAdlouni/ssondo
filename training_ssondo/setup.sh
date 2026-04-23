@@ -45,7 +45,7 @@ fi
 echo ""
 echo "[2/6] Installing Python dependencies..."
 cd "$SCRIPT_DIR"
-uv sync
+uv sync --frozen
 echo "  Dependencies installed."
 
 # ---------------------------------------------------------------------------
