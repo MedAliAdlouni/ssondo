@@ -391,4 +391,12 @@ class AudiosetDatasetKD(Dataset):
                 waveform=audio_tensor, orig_freq=sr, new_freq=self.sr
             )
 
+        # Pad or trim to exactly 10 seconds to ensure consistent tensor sizes
+        expected_samples = 10 * self.sr
+        if audio_tensor.shape[-1] < expected_samples:
+            padding = expected_samples - audio_tensor.shape[-1]
+            audio_tensor = torch.nn.functional.pad(audio_tensor, (0, padding))
+        elif audio_tensor.shape[-1] > expected_samples:
+            audio_tensor = audio_tensor[:, :expected_samples]
+
         return audio_tensor
