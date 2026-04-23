@@ -76,13 +76,19 @@ def setup_data_pipeline(conf: dict, generator: torch.Generator) -> tuple:
     root_dir = os.path.join(DATA, "AudioSet")
     audioset_loader = AudioSet(root_dir=root_dir)
 
-    cls_dir = os.path.join(
-        conf["cluster_dir"], f"{conf['dataset']['sampler_args']['n_clusters']}_clusters"
-    )
-    cluster_df_path = os.path.join(cls_dir, "predicted_labels.csv")
+    needs_clusters = conf["dataset"]["sampler"] == "WeightedRandomSamplerSSL"
+    if needs_clusters:
+        cls_dir = os.path.join(
+            conf["cluster_dir"],
+            f"{conf['dataset']['sampler_args']['n_clusters']}_clusters",
+        )
+        cluster_df_path = os.path.join(cls_dir, "predicted_labels.csv")
+    else:
+        cluster_df_path = None
 
     print(f"  Metadata file: {audioset_loader.metadata_file_path}")
-    print(f"  Cluster labels: {cluster_df_path}")
+    if cluster_df_path:
+        print(f"  Cluster labels: {cluster_df_path}")
 
     # Training dataset
     print("  Loading TRAIN dataset...")
