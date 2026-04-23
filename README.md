@@ -33,7 +33,7 @@ Downstream evaluation across **7 audio tasks** (4 music + 3 environmental sound)
 <div align="center">
 <img src="assets/paper_figures/downstream_evaluation.png" width="800" alt="Downstream Evaluation Results">
 
-*Table 1 from the paper. Bold = best per student. Green = % of teacher performance retained.*
+*Table 1. Downstream evaluation of S-SONDO with 95% Confidence Intervals (CI). We report the performance of our Knowledge Distillation method across teacher-student combinations. For each student model, supervised training results are reported as a reference (lines where MobileNetV3, DyMN, and ERes2Net have no teacher model). Bold values indicate the best result for each student between supervised and distillation training. Greyed values correspond to teacher performance, and green numbers denote the percentage of teacher performance achieved by the student.*
 </div>
 
 ### Loss Function Comparison
