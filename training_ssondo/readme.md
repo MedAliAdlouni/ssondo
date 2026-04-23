@@ -29,12 +29,13 @@ pip install uv  # if not installed
 uv sync
 ```
 
-2. **Set environment variables:**
+2. **(Optional) Set environment variables:**
+
+By default, `DATA` points to `training_ssondo/data/` and `OUTPUTS` points to `training_ssondo/outputs/`. Override them if your data lives elsewhere:
 
 ```bash
-# Bash
-export DATA=/path/to/training_ssondo/data
-export OUTPUTS=/path/to/training_ssondo/outputs
+export DATA=/path/to/your/data
+export OUTPUTS=/path/to/your/outputs
 ```
 
 3. **Download required files:**
@@ -48,7 +49,7 @@ export OUTPUTS=/path/to/training_ssondo/outputs
 - [DyMN](https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/dymn10_im.pt) - `dymn10_im.pt` (pretrained on ImageNet)
 - ERes2Net - No pretrained weights (starts with random initialization)
 
-**AudioSet Metadata** Download and place in `$DATA/AudioSet/`:
+**AudioSet Metadata** Download and place in `data/AudioSet/`:
 - [eval_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/eval_segments.csv)
 - [balanced_train_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/balanced_train_segments.csv)
 - [unbalanced_train_segments.csv](http://storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/unbalanced_train_segments.csv)
@@ -76,57 +77,57 @@ data/AudioSet/
 
 ### Step 1: Download AudioSet Subset
 
-```powershell
-uv run python -m training_ssondo.download_subset_of_audioset.download_audioset `
-    --metadata-csv $DATA/AudioSet/eval_segments.csv `
-    --n-clips 1000 `
-    --subset-name eval `
-    --random-state 42 `
+```bash
+uv run python -m training_ssondo.download_subset_of_audioset.download_audioset \
+    --metadata-csv data/AudioSet/eval_segments.csv \
+    --n-clips 1000 \
+    --subset-name eval \
+    --random-state 42 \
     --max-workers 5
 ```
 
-**Output:** `$DATA/AudioSet/{subset_name}/`
+**Output:** `data/AudioSet/{subset_name}/`
 
 **See:** [download_subset_of_audioset/README.md](download_subset_of_audioset/README.md)
 
 ### Step 2: Extract Teacher Knowledge
 
-```powershell
+```bash
 uv run -m training_ssondo.extract_teachers_knowledge.audioset_feature_extraction --conf_id matpac_mcl_eval
 ```
 
 **Configuration:** Edit `extract_teachers_knowledge/config.py`
 
-**Output:** `$DATA/teachers_knowledge/{teacher_model}/{window_length}/{output_type}/{subset}/{filename}.npz`
+**Output:** `data/teachers_knowledge/{teacher_model}/{window_length}/{output_type}/{subset}/{filename}.npz`
 
 **See:** [extract_teachers_knowledge/README.md](extract_teachers_knowledge/README.md)
 
 ### Step 3: Cluster Teacher Embeddings
 
 1. **Train clustering model:**
-```powershell
+```bash
 uv run -m training_ssondo.cluster_teachers_embeddings.learn_kmeans --conf_id 50_clusters_fit_matpac
 ```
 
 2. **Predict cluster labels:**
-```powershell
+```bash
 uv run -m training_ssondo.cluster_teachers_embeddings.label_prediction --conf_id 50_clusters_fit_matpac
 ```
 
 3. **Evaluate clustering:**
-```powershell
+```bash
 uv run -m training_ssondo.cluster_teachers_embeddings.evaluate_clustering --conf_id 50_clusters_fit_matpac
 ```
 
 **Configuration:** Edit `cluster_teachers_embeddings/config.py`
 
-**Output:** `$OUTPUTS/clustering/{teacher_model}/{n_clusters}_clusters/`
+**Output:** `outputs/clustering/{teacher_model}/{n_clusters}_clusters/`
 
 **See:** [cluster_teachers_embeddings/README.md](cluster_teachers_embeddings/README.md)
 
 ### Step 4: Knowledge Distillation Training
 
-```powershell
+```bash
 uv run -m training_ssondo.knowledge_distillation_training.main --conf_id matpac_mn_cosine_50c
 ```
 
@@ -134,12 +135,12 @@ uv run -m training_ssondo.knowledge_distillation_training.main --conf_id matpac_
 
 **Key parameters:**
 - `teacher_knowledge_path`: Path to teacher embeddings
-- `cluster_labels_path`: Path to cluster assignments (optional)
+- `cluster_labels_path`: Path to cluster assignments (optional, only for cluster-aware sampling)
 - `classification_head.n_classes`: Must match teacher embedding dimension
 - `knowledge_distillation.loss`: Loss type (MSE, L1, cosine_similarity, contrastive_loss, etc.)
 - `knowledge_distillation.lambda`: Weight between prediction and distillation loss
 
-**Output:** `$OUTPUTS/knowledge_distillation/{teacher_model}/{student_model}/{conf_id}/{job_id}/`
+**Output:** `outputs/knowledge_distillation/{teacher_model}/{student_model}/{conf_id}/{job_id}/`
 
 **See:** [knowledge_distillation_training/README.md](knowledge_distillation_training/README.md)
 
@@ -170,6 +171,7 @@ uv run -m training_ssondo.knowledge_distillation_training.main --conf_id matpac_
 training_ssondo/
 ├── readme.md
 ├── pyproject.toml
+├── __init__.py                      # DATA and OUTPUTS defaults
 ├── data/
 │   ├── AudioSet/
 │   └── teachers_knowledge/
@@ -190,7 +192,14 @@ training_ssondo/
     └── student_models/
 ```
 
-## Optional Environment Variables (SLURM-related):
-- `SLURM_JOB_ID`: Job identification
-- `SLURM_GPUS_ON_NODE`: Number of GPUs
-- `SLURM_NNODES`: Number of nodes
+## Environment Variables
+
+All environment variables are optional. Defaults are relative to the `training_ssondo/` directory.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATA` | `training_ssondo/data/` | Root data directory |
+| `OUTPUTS` | `training_ssondo/outputs/` | Output directory |
+| `SLURM_JOB_ID` | random 8-char string | Job identification |
+| `SLURM_GPUS_ON_NODE` | `1` | Number of GPUs |
+| `SLURM_NNODES` | `1` | Number of nodes |
