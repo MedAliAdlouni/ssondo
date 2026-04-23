@@ -1,0 +1,9 @@
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+uv.lock
+models/

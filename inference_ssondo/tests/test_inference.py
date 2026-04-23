@@ -19,11 +19,19 @@ from ssondo.model import get_ssondo, SsondoWrapper
 # ---------------------------------------------------------------------------
 CKPT_PATH = os.environ.get(
     "SSONDO_CKPT_PATH",
-    os.path.join(os.path.dirname(__file__), "..", "models", "matpac++_mobilenetv3_last.ckpt"),
+    os.path.join(
+        os.path.dirname(__file__), "..", "models", "matpac++_mobilenetv3_last.ckpt"
+    ),
 )
 
 AUDIO_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "..", "training_ssondo", "data", "AudioSet", "eval",
+    os.path.dirname(__file__),
+    "..",
+    "..",
+    "training_ssondo",
+    "data",
+    "AudioSet",
+    "eval",
 )
 
 SR = 32_000  # expected sample rate
@@ -98,8 +106,8 @@ class TestPreprocessing:
         with torch.no_grad():
             out = model.preprocess(x)
         assert out.ndim == 4
-        assert out.shape[0] == 1   # batch
-        assert out.shape[1] == 1   # 1 segment (10s window)
+        assert out.shape[0] == 1  # batch
+        assert out.shape[1] == 1  # 1 segment (10s window)
         assert out.shape[2] == 128  # mel bands
 
 
@@ -148,7 +156,7 @@ class TestInferenceRealAudio:
             emb = model(real_audio)
 
         assert emb.ndim == 3
-        assert emb.shape[0] == 1    # batch
+        assert emb.shape[0] == 1  # batch
         assert emb.shape[2] == 960  # embedding dim
         assert not torch.isnan(emb).any(), "Output contains NaN"
         assert not torch.isinf(emb).any(), "Output contains Inf"
