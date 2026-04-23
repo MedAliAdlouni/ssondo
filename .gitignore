@@ -69,3 +69,7 @@ data/
 
 # Model files
 *.pt
+
+# Claude
+CLAUDE.md
+.claude/
