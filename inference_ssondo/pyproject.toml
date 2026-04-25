@@ -1,6 +1,6 @@
 [project]
 name = "ssondo"
-version = "0.1.1"
+version = "0.2.0"
 description = "S-SONDO: Lightweight audio embeddings from self-supervised knowledge distillation"
 readme = "README.md"
 license = "MIT"

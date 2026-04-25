@@ -174,6 +174,27 @@ def _build_student_model(conf: dict) -> ModelWrapper:
     return ModelWrapper(model=model, classification_head=class_head)
 
 
+def _build_head(
+    head: str, emb_dim: int, n_classes: int, hidden_sizes: list[int] | None
+) -> nn.Module:
+    """Build a classification head to attach on top of the backbone."""
+    if head == "linear":
+        return nn.Linear(emb_dim, n_classes)
+
+    if head == "mlp":
+        if hidden_sizes is None:
+            hidden_sizes = [512]
+        layers: list[nn.Module] = []
+        in_dim = emb_dim
+        for h in hidden_sizes:
+            layers.extend([nn.Linear(in_dim, h), nn.ReLU()])
+            in_dim = h
+        layers.append(nn.Linear(in_dim, n_classes))
+        return nn.Sequential(*layers)
+
+    raise ValueError(f"head must be 'linear' or 'mlp', got '{head}'")
+
+
 class SsondoWrapper(nn.Module):
     """End-to-end wrapper for S-SONDO student models.
 
@@ -181,12 +202,13 @@ class SsondoWrapper(nn.Module):
     with frozen backbone.
     """
 
-    def __init__(self, student_model, slicer, logmel, return_logits=False):
+    def __init__(self, student_model, slicer, logmel, return_logits=False, head=None):
         super().__init__()
         self.student_model = student_model
         self.slicer = slicer
         self.logmel = logmel
         self.return_logits = return_logits
+        self.head = head
 
     @property
     def backbone(self) -> nn.Module:
@@ -287,9 +309,20 @@ class SsondoWrapper(nn.Module):
         Returns
         -------
         torch.Tensor or tuple[torch.Tensor, torch.Tensor]
-            Embeddings of shape ``(batch, n_segments, emb_size)``.
-            If ``return_logits=True``, returns ``(embeddings, logits)``.
+            If a classification ``head`` was provided: logits of shape
+            ``(batch, n_classes)``, or ``(logits, embeddings)`` when
+            ``return_logits=True``.
+
+            Otherwise: embeddings of shape ``(batch, n_segments, emb_size)``,
+            or ``(embeddings, logits)`` when ``return_logits=True``.
         """
+        if self.head is not None:
+            emb = self.get_embeddings(x)
+            logits = self.head(emb)
+            if self.return_logits:
+                return logits, emb
+            return logits
+
         x = self.preprocess(x)
         logits, embeddings = self.student_model(x)
         if self.return_logits:
@@ -298,7 +331,10 @@ class SsondoWrapper(nn.Module):
 
 
 def get_ssondo(
-    checkpoint: str,
+    checkpoint: str = "matpac-mobilenetv3",
+    head: str | None = None,
+    n_classes: int | None = None,
+    hidden_sizes: list[int] | None = None,
     return_logits: bool = False,
     device: str = "cpu",
 ) -> SsondoWrapper:
@@ -306,13 +342,22 @@ def get_ssondo(
 
     Parameters
     ----------
-    checkpoint : str
+    checkpoint : str, optional
         Either a model name (e.g., ``"matpac-mobilenetv3"``) which
         auto-downloads from Hugging Face Hub, or a local path to a
-        ``.ckpt`` file.
+        ``.ckpt`` file. Defaults to ``"matpac-mobilenetv3"``.
+    head : str or None, optional
+        Classification head to attach on top of the backbone.
+        ``"linear"`` for a single ``nn.Linear`` layer, ``"mlp"`` for a
+        multi-layer perceptron. ``None`` (default) returns raw embeddings.
+    n_classes : int or None, optional
+        Number of output classes. Required when ``head`` is set.
+    hidden_sizes : list[int] or None, optional
+        Hidden layer sizes for the MLP head (e.g., ``[512, 256]``).
+        Only used when ``head="mlp"``. Defaults to ``[512]``.
     return_logits : bool, optional
-        If True, forward returns ``(embeddings, logits)`` instead of
-        just embeddings.
+        If True and no ``head``: forward returns ``(embeddings, logits)``.
+        If True and ``head`` is set: forward returns ``(logits, embeddings)``.
     device : str, optional
         Device to load the model on (default: ``"cpu"``).
 
@@ -323,19 +368,26 @@ def get_ssondo(
 
     Examples
     --------
-    Inference:
+    Inference (default model):
 
-    >>> model = get_ssondo("matpac-mobilenetv3")
+    >>> model = get_ssondo()
     >>> embeddings = model(audio)
 
-    Linear probing (frozen backbone):
+    With a linear classification head:
 
-    >>> model = get_ssondo("matpac-mobilenetv3")
+    >>> model = get_ssondo(head="linear", n_classes=50)
     >>> model.freeze_backbone()
-    >>> head = torch.nn.Linear(model.embedding_dim, num_classes)
-    >>> emb = model.get_embeddings(audio)  # (batch, 960)
-    >>> logits = head(emb)
+    >>> logits = model(audio)  # (batch, 50)
+
+    With an MLP classification head:
+
+    >>> model = get_ssondo(head="mlp", n_classes=50, hidden_sizes=[512, 256])
+    >>> model.freeze_backbone()
+    >>> logits = model(audio)  # (batch, 50)
     """
+    if head is not None and n_classes is None:
+        raise ValueError("n_classes is required when head is specified")
+
     ckpt = _resolve_checkpoint(checkpoint, device)
     conf = ckpt["training_config"]
 
@@ -366,11 +418,17 @@ def get_ssondo(
     }
     student_model.load_state_dict(new_state_dict, strict=True)
 
+    classification_head = None
+    if head is not None:
+        emb_dim = student_model.model.emb_size
+        classification_head = _build_head(head, emb_dim, n_classes, hidden_sizes)
+
     wrapper = SsondoWrapper(
         student_model=student_model,
         slicer=slicer,
         logmel=logmel,
         return_logits=return_logits,
+        head=classification_head,
     )
     wrapper = wrapper.to(device)
     wrapper.eval()

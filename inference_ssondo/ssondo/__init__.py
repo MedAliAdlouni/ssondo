@@ -6,17 +6,19 @@ models (MATPAC, M2D).
 
 Usage:
     >>> from ssondo import get_ssondo, list_models
-    >>> model = get_ssondo("matpac-mobilenetv3")
+    >>> model = get_ssondo()  # defaults to matpac-mobilenetv3
     >>> embeddings = model(audio_tensor)
 
-    # Finetuning with frozen backbone:
+    # With a built-in classification head:
+    >>> model = get_ssondo(head="linear", n_classes=50)
     >>> model.freeze_backbone()
-    >>> head = torch.nn.Linear(model.embedding_dim, num_classes)
-    >>> emb = model.get_embeddings(audio)
-    >>> logits = head(emb)
+    >>> logits = model(audio_tensor)
+
+    # MLP head with custom hidden layers:
+    >>> model = get_ssondo(head="mlp", n_classes=50, hidden_sizes=[512, 256])
 """
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 from ssondo.model import get_ssondo, list_models, SsondoWrapper
 
