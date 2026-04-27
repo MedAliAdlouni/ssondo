@@ -153,7 +153,8 @@ Trains a student model to match teacher embeddings. See [knowledge_distillation_
 ## Architecture
 
 ### Teacher Models
-- **[MATPAC](https://github.com/aurianworld/matpac)**: Multi-level contrastive learning audio model (checkpoint: `matpac_plus_6s_2048_enconly.pt`)
+- **[MATPAC](https://github.com/aurianworld/matpac)**: Masked Latent Prediction and Classification SSL audio model
+ (checkpoint: `matpac_plus_6s_2048_enconly.pt`)
 - **[M2D](https://github.com/nttcslab/m2d)**: Masked Modeling Duo self-supervised model (checkpoint: `m2d_vit_base-80x608p16x16-221006-mr7`)
 
 ### Student Models
