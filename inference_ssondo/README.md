@@ -1,12 +1,22 @@
+<div align="center">
+
 # S-SONDO
 
-Lightweight audio embeddings from self-supervised knowledge distillation.
+**Lightweight audio embeddings from self-supervised knowledge distillation.**
 
-S-SONDO provides compact audio models (MobileNetV3, DyMN, ERes2Net) trained via knowledge distillation from large audio foundation models (MATPAC, M2D). Extract general-purpose audio embeddings with a single function call.
+Up to **61x smaller** than teacher models, retaining up to **96% performance**.
 
-**Paper:** *S-SONDO: Self-Supervised Knowledge Distillation for General Audio Foundation Models* (ICASSP 2026)
+<a href="https://arxiv.org/"><img src="https://img.shields.io/badge/arXiv-preprint-b31b1b?style=for-the-badge&logo=arxiv" alt="Paper"></a>&nbsp;
+<a href="https://huggingface.co/mohammedali2501/ssondo"><img src="https://img.shields.io/badge/%F0%9F%A4%97_Models-yellow?style=for-the-badge" alt="HuggingFace"></a>&nbsp;
+<a href="https://github.com/MedAliAdlouni/ssondo_temp"><img src="https://img.shields.io/badge/GitHub-Code-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
 
-## Installation
+*ICASSP 2026*
+
+</div>
+
+---
+
+## Install
 
 ```bash
 pip install ssondo
@@ -15,112 +25,102 @@ pip install ssondo
 ## Quick Start
 
 ```python
-import torchaudio
 from ssondo import get_ssondo
 
-# Load a pretrained model (auto-downloads from Hugging Face Hub)
-model = get_ssondo("matpac-mobilenetv3")
+model = get_ssondo()
+embeddings = model(audio)  # (batch, n_segments, 960)
+```
 
-# Load audio (mono, 32kHz)
-x, sr = torchaudio.load("audio.wav")
-x = x.mean(dim=0, keepdim=True)  # mono
+No preprocessing, no config files, no manual downloads. Pass raw mono audio at 32 kHz and get embeddings.
 
-# Extract embeddings
-embeddings = model(x)  # (1, n_segments, 960)
+## Pretrained Classifiers
+
+7 ready-to-use classifiers trained on standard audio benchmarks:
+
+```python
+model = get_ssondo(head="esc50")
+logits = model(audio)  # (batch, 50)
+```
+
+| Head | Task | Classes |
+|------|------|:-------:|
+| `esc50` | Environmental sound | 50 |
+| `us8k` | Urban sound | 10 |
+| `fsd50k` | Sound events | 200 |
+| `gtzan` | Music genre | 10 |
+| `openmic` | Instrument recognition | 20 |
+| `nsynth` | Instrument family | 11 |
+| `magna-tag-a-tune` | Music auto-tagging | 50 |
+
+## Custom Heads
+
+```python
+# Linear
+model = get_ssondo(head="linear", n_classes=10)
+
+# MLP
+model = get_ssondo(head="mlp", n_classes=10, hidden_sizes=[512, 256])
+```
+
+## Finetuning
+
+```python
+# Linear probing (frozen backbone)
+model = get_ssondo(head="linear", n_classes=10)
+model.freeze_backbone()
+model.train()
+
+logits = model(audio)
+loss = criterion(logits, labels)
+loss.backward()  # only head parameters update
+
+# Full finetuning
+model.unfreeze_backbone()
+```
+
+## API at a Glance
+
+```python
+from ssondo import get_ssondo, list_models, list_heads
+
+model = get_ssondo()                          # default backbone
+model = get_ssondo("matpac-dymn")             # specific backbone
+model = get_ssondo(head="esc50")              # pretrained classifier
+model = get_ssondo(head="linear", n_classes=10)  # custom head
+model = get_ssondo(device="cuda")             # GPU
+model = get_ssondo("path/to/checkpoint.ckpt") # local checkpoint
+
+embeddings = model(audio)                     # (batch, n_segments, 960)
+emb = model.get_embeddings(audio)             # (batch, 960) mean-pooled
+model.embedding_dim                           # 960
+model.backbone                                # raw nn.Module
+
+list_models()                                 # available backbones
+list_heads()                                  # available classifiers
 ```
 
 ## Available Models
 
-```python
-from ssondo import list_models
+| Model | Teacher | Student | Params | Emb. |
+|-------|---------|---------|:------:|:----:|
+| `matpac-mobilenetv3` | MATPAC++ | MobileNetV3 | 2.9M | 960 |
+| `matpac-dymn` | MATPAC++ | DyMN | 8.7M | 960 |
+| `matpac-eres2net` | MATPAC++ | ERes2Net | 1.4M | 10240 |
+| `m2d-mobilenetv3` | M2D | MobileNetV3 | 2.9M | 960 |
+| `m2d-dymn` | M2D | DyMN | 8.7M | 960 |
+| `m2d-eres2net` | M2D | ERes2Net | 1.4M | 10240 |
 
-for name, description in list_models().items():
-    print(f"{name}: {description}")
-```
+## Input
 
-| Model | Teacher | Student | Embedding Size |
-|-------|---------|---------|---------------|
-| `matpac-mobilenetv3` | MATPAC++ | MobileNetV3 | 960 |
-| `matpac-dymn` | MATPAC++ | DyMN | 960 |
-| `matpac-eres2net` | MATPAC++ | ERes2Net | varies |
-| `m2d-mobilenetv3` | M2D | MobileNetV3 | 960 |
-| `m2d-dymn` | M2D | DyMN | 960 |
-| `m2d-eres2net` | M2D | ERes2Net | varies |
+- **Mono audio**, single channel
+- **Sample rate:** 32,000 Hz
+- Internally sliced into 10 s segments and converted to 128-band log-mel spectrograms
 
-## Usage
+## Links
 
-### Extract Embeddings
-
-```python
-model = get_ssondo("matpac-mobilenetv3")
-embeddings = model(audio)  # (batch, n_segments, emb_size)
-```
-
-### Get Logits Too
-
-```python
-model = get_ssondo("matpac-mobilenetv3", return_logits=True)
-embeddings, logits = model(audio)
-```
-
-### GPU Inference
-
-```python
-model = get_ssondo("matpac-mobilenetv3", device="cuda")
-embeddings = model(audio.cuda())
-```
-
-### Load from Local Checkpoint
-
-```python
-model = get_ssondo("path/to/checkpoint.ckpt")
-```
-
-### Finetuning with Frozen Backbone (Linear Probe)
-
-```python
-import torch
-from ssondo import get_ssondo
-
-model = get_ssondo("matpac-mobilenetv3")
-model.freeze_backbone()  # freeze all backbone params
-model.train()
-
-# Add a linear classifier for your task
-head = torch.nn.Linear(model.embedding_dim, num_classes)
-
-# Extract embeddings (backbone frozen, no grad)
-emb = model.get_embeddings(audio)  # (batch, 960)
-logits = head(emb)
-loss = criterion(logits, labels)
-loss.backward()  # only head parameters are updated
-```
-
-### Full Finetuning
-
-```python
-model = get_ssondo("matpac-mobilenetv3")
-model.train()  # all parameters trainable by default
-```
-
-### Useful Properties
-
-```python
-model.embedding_dim   # 960 — size of backbone embeddings
-model.backbone        # the raw backbone nn.Module (e.g., MobileNetV3)
-```
-
-## Input Requirements
-
-- **Mono audio** (single channel)
-- **Sample rate**: 32,000 Hz
-- Audio is internally sliced into 10-second segments and converted to 128-band log-mel spectrograms
-
-## How It Works
-
-`get_ssondo()` auto-detects everything from the checkpoint: student backbone, preprocessing parameters, and classification head. No manual configuration needed.
-
-When you pass a model name (e.g., `"matpac-mobilenetv3"`), the checkpoint is automatically downloaded from [Hugging Face Hub](https://huggingface.co/mohammedali2501/ssondo) and cached locally.
+- **Paper:** [arXiv](https://arxiv.org/)
+- **Models:** [Hugging Face Hub](https://huggingface.co/mohammedali2501/ssondo)
+- **Code & Training:** [GitHub](https://github.com/MedAliAdlouni/ssondo_temp)
 
 ## Citation
 
