@@ -101,14 +101,16 @@ list_heads()                                  # available classifiers
 
 ## Available Models
 
-| Model | Teacher | Student | Params | Emb. |
-|-------|---------|---------|:------:|:----:|
-| `matpac-mobilenetv3` | MATPAC++ | MobileNetV3 | 2.9M | 960 |
-| `matpac-dymn` | MATPAC++ | DyMN | 8.7M | 960 |
-| `matpac-eres2net` | MATPAC++ | ERes2Net | 1.4M | 10240 |
-| `m2d-mobilenetv3` | M2D | MobileNetV3 | 2.9M | 960 |
-| `m2d-dymn` | M2D | DyMN | 8.7M | 960 |
-| `m2d-eres2net` | M2D | ERes2Net | 1.4M | 10240 |
+The **matpac-mobilenetv3** combination achieved the best downstream performance across all 7 benchmarks (96.4% of teacher performance at 61x fewer parameters). This is the model provided in the package and on Hugging Face, along with all 7 pretrained classification heads.
+
+| Model | Teacher | Student | Params | Emb. | Avg. Score | Status |
+|-------|---------|---------|:------:|:----:|:----------:|:------:|
+| **`matpac-mobilenetv3`** | **MATPAC++** | **MobileNetV3** | **2.9M** | **960** | **73.0** | **Available** |
+| `matpac-dymn` | MATPAC++ | DyMN | 8.7M | 960 | 72.6 | Coming soon |
+| `matpac-eres2net` | MATPAC++ | ERes2Net | 1.4M | 10240 | 70.8 | Coming soon |
+| `m2d-mobilenetv3` | M2D | MobileNetV3 | 2.9M | 960 | 69.2 | Coming soon |
+| `m2d-dymn` | M2D | DyMN | 8.7M | 960 | 68.7 | Coming soon |
+| `m2d-eres2net` | M2D | ERes2Net | 1.4M | 10240 | 69.2 | Coming soon |
 
 ## Input
 
