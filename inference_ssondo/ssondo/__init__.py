@@ -18,7 +18,7 @@ Usage:
     >>> model = get_ssondo(head="mlp", n_classes=50, hidden_sizes=[512, 256])
 """
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from ssondo.model import get_ssondo, list_models, list_heads, SsondoWrapper
 

@@ -83,8 +83,7 @@ model.unfreeze_backbone()
 ```python
 from ssondo import get_ssondo, list_models, list_heads
 
-model = get_ssondo()                          # default backbone
-model = get_ssondo("matpac-dymn")             # specific backbone
+model = get_ssondo()                          # load model
 model = get_ssondo(head="esc50")              # pretrained classifier
 model = get_ssondo(head="linear", n_classes=10)  # custom head
 model = get_ssondo(device="cuda")             # GPU
@@ -95,22 +94,12 @@ emb = model.get_embeddings(audio)             # (batch, 960) mean-pooled
 model.embedding_dim                           # 960
 model.backbone                                # raw nn.Module
 
-list_models()                                 # available backbones
 list_heads()                                  # available classifiers
 ```
 
-## Available Models
+## Model
 
-The **matpac-mobilenetv3** combination achieved the best downstream performance across all 7 benchmarks (96.4% of teacher performance at 61x fewer parameters). This is the model provided in the package and on Hugging Face, along with all 7 pretrained classification heads.
-
-| Model | Teacher | Student | Params | Emb. | Avg. Score | Status |
-|-------|---------|---------|:------:|:----:|:----------:|:------:|
-| **`matpac-mobilenetv3`** | **MATPAC++** | **MobileNetV3** | **2.9M** | **960** | **73.0** | **Available** |
-| `matpac-dymn` | MATPAC++ | DyMN | 8.7M | 960 | 72.6 | Coming soon |
-| `matpac-eres2net` | MATPAC++ | ERes2Net | 1.4M | 10240 | 70.8 | Coming soon |
-| `m2d-mobilenetv3` | M2D | MobileNetV3 | 2.9M | 960 | 69.2 | Coming soon |
-| `m2d-dymn` | M2D | DyMN | 8.7M | 960 | 68.7 | Coming soon |
-| `m2d-eres2net` | M2D | ERes2Net | 1.4M | 10240 | 69.2 | Coming soon |
+S-SONDO ships with **matpac-mobilenetv3** — a MobileNetV3 (2.9M params) distilled from MATPAC++, achieving the best downstream performance across all 7 benchmarks (96.4% of teacher performance at 61x fewer parameters). Embeddings are 960-dimensional.
 
 ## Input
 
