@@ -50,6 +50,16 @@ AVAILABLE_MODELS = {
     },
 }
 
+PRETRAINED_HEADS = {
+    "gtzan": {"filename": "heads/gtzan.pth", "n_classes": 10, "description": "Music genre (10 classes)"},
+    "openmic": {"filename": "heads/openmic.pth", "n_classes": 20, "description": "Instrument recognition (20 classes)"},
+    "nsynth": {"filename": "heads/nsynth.pth", "n_classes": 11, "description": "Instrument family (11 classes)"},
+    "esc50": {"filename": "heads/esc50.pth", "n_classes": 50, "description": "Environmental sound (50 classes)"},
+    "us8k": {"filename": "heads/us8k.pth", "n_classes": 10, "description": "Urban sound (10 classes)"},
+    "magna-tag-a-tune": {"filename": "heads/magna-tag-a-tune.pth", "n_classes": 50, "description": "Music auto-tagging (50 tags)"},
+    "fsd50k": {"filename": "heads/fsd50k.pth", "n_classes": 200, "description": "Sound events (200 classes)"},
+}
+
 
 def list_models() -> dict[str, str]:
     """List available pretrained S-SONDO models.
@@ -66,6 +76,26 @@ def list_models() -> dict[str, str]:
     ...     print(f"{name}: {desc}")
     """
     return {name: info["description"] for name, info in AVAILABLE_MODELS.items()}
+
+
+def list_heads() -> dict[str, str]:
+    """List available pretrained classification heads.
+
+    These are linear probes trained on the matpac-mobilenetv3 backbone
+    across 7 standard audio benchmarks.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of head name to description.
+
+    Example
+    -------
+    >>> from ssondo import list_heads
+    >>> for name, desc in list_heads().items():
+    ...     print(f"{name}: {desc}")
+    """
+    return {name: info["description"] for name, info in PRETRAINED_HEADS.items()}
 
 
 def _resolve_checkpoint(checkpoint: str, device: str = "cpu") -> dict:
@@ -175,9 +205,28 @@ def _build_student_model(conf: dict) -> ModelWrapper:
 
 
 def _build_head(
-    head: str, emb_dim: int, n_classes: int, hidden_sizes: list[int] | None
+    head: str,
+    emb_dim: int,
+    n_classes: int | None,
+    hidden_sizes: list[int] | None,
+    device: str = "cpu",
 ) -> nn.Module:
     """Build a classification head to attach on top of the backbone."""
+    if head in PRETRAINED_HEADS:
+        from huggingface_hub import hf_hub_download
+
+        info = PRETRAINED_HEADS[head]
+        local_path = hf_hub_download(
+            repo_id=HF_REPO_ID, filename=info["filename"]
+        )
+        state = torch.load(local_path, map_location=device, weights_only=False)
+        linear = nn.Linear(emb_dim, info["n_classes"])
+        linear.load_state_dict({
+            "weight": state["probe.linear_probe.weight"],
+            "bias": state["probe.linear_probe.bias"],
+        })
+        return linear
+
     if head == "linear":
         return nn.Linear(emb_dim, n_classes)
 
@@ -192,7 +241,8 @@ def _build_head(
         layers.append(nn.Linear(in_dim, n_classes))
         return nn.Sequential(*layers)
 
-    raise ValueError(f"head must be 'linear' or 'mlp', got '{head}'")
+    valid = ["linear", "mlp"] + list(PRETRAINED_HEADS.keys())
+    raise ValueError(f"head must be one of {valid}, got '{head}'")
 
 
 class SsondoWrapper(nn.Module):
@@ -349,9 +399,13 @@ def get_ssondo(
     head : str or None, optional
         Classification head to attach on top of the backbone.
         ``"linear"`` for a single ``nn.Linear`` layer, ``"mlp"`` for a
-        multi-layer perceptron. ``None`` (default) returns raw embeddings.
+        multi-layer perceptron, or a pretrained head name (e.g.,
+        ``"esc50"``, ``"gtzan"``) to load a ready-to-use classifier.
+        Use ``list_heads()`` to see available pretrained heads.
+        ``None`` (default) returns raw embeddings.
     n_classes : int or None, optional
-        Number of output classes. Required when ``head`` is set.
+        Number of output classes. Required when ``head`` is ``"linear"``
+        or ``"mlp"``. Ignored for pretrained heads.
     hidden_sizes : list[int] or None, optional
         Hidden layer sizes for the MLP head (e.g., ``[512, 256]``).
         Only used when ``head="mlp"``. Defaults to ``[512]``.
@@ -373,7 +427,12 @@ def get_ssondo(
     >>> model = get_ssondo()
     >>> embeddings = model(audio)
 
-    With a linear classification head:
+    Pretrained ESC-50 classifier:
+
+    >>> model = get_ssondo(head="esc50")
+    >>> logits = model(audio)  # (batch, 50)
+
+    With a custom linear head:
 
     >>> model = get_ssondo(head="linear", n_classes=50)
     >>> model.freeze_backbone()
@@ -385,8 +444,8 @@ def get_ssondo(
     >>> model.freeze_backbone()
     >>> logits = model(audio)  # (batch, 50)
     """
-    if head is not None and n_classes is None:
-        raise ValueError("n_classes is required when head is specified")
+    if head in ("linear", "mlp") and n_classes is None:
+        raise ValueError("n_classes is required when head is 'linear' or 'mlp'")
 
     ckpt = _resolve_checkpoint(checkpoint, device)
     conf = ckpt["training_config"]
@@ -421,7 +480,7 @@ def get_ssondo(
     classification_head = None
     if head is not None:
         emb_dim = student_model.model.emb_size
-        classification_head = _build_head(head, emb_dim, n_classes, hidden_sizes)
+        classification_head = _build_head(head, emb_dim, n_classes, hidden_sizes, device)
 
     wrapper = SsondoWrapper(
         student_model=student_model,
