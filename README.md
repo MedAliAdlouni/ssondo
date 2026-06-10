@@ -6,13 +6,13 @@
 
 **ICASSP 2026**
 
-<a href="https://ieeexplore.ieee.org/document/11462257"><img src="https://img.shields.io/badge/arXiv-preprint-b31b1b?style=for-the-badge&logo=arxiv" alt="Paper"></a>&nbsp;
+<a href="https://arxiv.org/abs/2604.24933"><img src="https://img.shields.io/badge/arXiv-preprint-b31b1b?style=for-the-badge&logo=arxiv" alt="Paper"></a>&nbsp;
 <a href="https://huggingface.co/mohammedali2501/ssondo"><img src="https://img.shields.io/badge/%F0%9F%A4%97_Models-yellow?style=for-the-badge" alt="HuggingFace"></a>&nbsp;
 <a href="https://pypi.org/project/ssondo/"><img src="https://img.shields.io/badge/PyPI-ssondo-3775A9?style=for-the-badge&logo=pypi&logoColor=white" alt="PyPI"></a>&nbsp;
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"></a>&nbsp;
 <a href="https://python.org"><img src="https://img.shields.io/badge/Python-%E2%89%A53.10-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
 
-[Paper](https://arxiv.org/) | [Models](https://huggingface.co/mohammedali2501/ssondo) | [PyPI Package](https://pypi.org/project/ssondo/) | [Training Code](#training) | [Notebooks](#notebooks)
+[Paper](https://arxiv.org/abs/2604.24933) | [Models](https://huggingface.co/mohammedali2501/ssondo) | [PyPI Package](https://pypi.org/project/ssondo/) | [Training Code](#training) | [Notebooks](#notebooks)
 
 </div>
 
