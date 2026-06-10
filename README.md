@@ -52,6 +52,14 @@ Downstream evaluation across **7 audio tasks** (4 music + 3 environmental sound)
 *Fig. 2. Ablation on the number of clusters for the Balanced Data Sampling. The fixed dashed line is the random sampling baseline.*
 </div>
 
+## Poster
+
+<div align="center">
+<a href="assets/poster_ssondo.jpeg"><img src="assets/poster_ssondo.jpeg" width="700" alt="S-SONDO ICASSP 2026 Poster"></a>
+
+*S-SONDO poster presented at ICASSP 2026. Click to view full size.*
+</div>
+
 ## Repository
 
 This repository is organized into three main folders:
